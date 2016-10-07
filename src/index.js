@@ -1,5 +1,14 @@
-var numeros = [400,200,1,-23]
+var page = require('page');
 
-var Numerosmas1 = numeros.map(n => n + 1)
 
-console.log(Numerosmas1)
+var main = document.getElementById('main-container')
+
+page('/', function (ctx, next) {
+  main.innerHTML = 'HOME <a href="/signup"> Signup </a>'
+})
+
+page('/signup', function (ctx, next) {
+  main.innerHTML = 'Sign <a href="/"> hoe </a>'
+})
+
+page()
