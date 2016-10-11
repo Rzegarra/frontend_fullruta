@@ -12,11 +12,6 @@ body{
   margin: 30px auto;
 }
 
-
-#main-container .clo{
-  
-}
-
 .iphone{
   max-width: 100%;
 }
@@ -59,49 +54,4 @@ body{
 }
 .signup-form .btn.btn-signup{
   background-color: #b30047
-}
-
-
-@media screen and (min-width: 767px) {
-
-	.sidebar.fixed { 
-		position: fixed;
-		top: 0;
-	}
-	
-	a.grand-button,
-	a.grand-button:hover { width: auto; display: inline-block !important; }
-	
-}
-
-@media screen and (max-width: 767px) {
-
-	.header { padding-bottom: 25px; padding: 5px 0; }
-	.header .buttons { margin: 40px 0 0; text-align: center; }
-	.header h1 { font-size: 54px; }
-	.header .version { font-size: 18px; }
-	.header .clock { margin: 0 auto; display: block; width: 322px; }
-	
-	.flip-clock-wrapper ul { height: 50px; line-height: 50px; }
-	.flip-clock-wrapper ul li a div.up:after { top: 24px; }
-	.flip-clock-divider { height: 50px; }
-	.flip-clock-dot { height: 6px; width: 6px; left: 7px;}
-	.flip-clock-dot.top { top: 17px; }
-	.flip-clock-dot.bottom { bottom: 8px; }
-	
-	.grand-button,
-	a.grand-button,
-	a.grand-button:hover { 
-		display: block !important;
-		width: 95%; 
-		margin: 0 2.5% 10px !important;
-	}
-	
-	.header .flip-clock-divider .flip-clock-label { font-size: 16px; }
-	.header .flip-clock-divider.hours .flip-clock-label { right: -66px; }
-	.header .flip-clock-divider.minutes .flip-clock-label { right: -78px; }
-	.header .flip-clock-divider.seconds .flip-clock-label { right: -78px; }
-	
-	.flip-clock-wrapper ul { width: 37px; }
-	.flip-clock-wrapper ul li a div div.inn { font-size: 30px; }
 }

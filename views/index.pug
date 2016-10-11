@@ -21,15 +21,16 @@ html
     
     link(href="https://fonts.googleapis.com/css?family=Montserrat|Monoton|Oleo+Script" rel="stylesheet")
     link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css")
+    script(type='text/javascript', src='https://code.jquery.com/jquery-2.1.1.min.js')
     link(rel="stylesheet" type="text/css" href="app.css")
-
-    
-
     meta(charset="UTF-8")
     meta(name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no")
+
   body 
+    .row
+      .clockstyle
+        .clock
     section#main-container
-    
     footer.site-footer
       .container
         .row
@@ -42,6 +43,4 @@ html
                 a(href='#!') ingles
           dvi.col.s12.l3.push-l6.center-align
             | ©VEGO
-    script(type='text/javascript', src='https://code.jquery.com/jquery-2.1.1.min.js')
-    script(src='https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/js/materialize.min.js')
-    script(type='application/javascript' src='app.js')
+  script(type='application/javascript' src='app.js')

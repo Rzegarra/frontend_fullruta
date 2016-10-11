@@ -36,9 +36,6 @@ gulp.task('assets', function () {
 })
 
 
-
-
-
 function compile(watch){
   var bundle = watchify(browserify('src/index.js'))
   function rebundle () {
@@ -52,10 +49,6 @@ function compile(watch){
     gulp.src('src/js/*.js')
       .pipe(concat('app.js'))
       .pipe(gulp.dest('public'))
-
-    gulp
-      .src('build/*')
-      .pipe(gulp.dest('public'))
   }
   
   if (watch) {
@@ -68,8 +61,22 @@ function compile(watch){
 }
 
 gulp.task('build', function () {
-  return compile()
+  var bundle = browserify('src/index.js')
+  bundle
+      .transform(babel)
+      .bundle()
+      .pipe(source('index.js'))
+      .pipe(rename('app.js'))
+      .pipe(gulp.dest('src/js'))
 })
+
+gulp.task('js', function () {
+  var bundle = browserify('src/index.js')
+  gulp.src('src/js/*.js')
+      .pipe(concat('app.js'))
+      .pipe(gulp.dest('public'))
+})
+
 
 gulp.task('watch', function () {
   return compile(true)
@@ -85,4 +92,4 @@ gulp.task('script' ,function () {
     .pipe(gulp.dest('public'))
   })
 
-gulp.task('default', ['sass','assets','css','build'])
+gulp.task('default', ['sass','assets','css','build','js'])
