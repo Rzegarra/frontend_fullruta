@@ -5,14 +5,29 @@ var babel = require('babelify')
 var browserify = require ('browserify')
 var source = require ('vinyl-source-stream')
 var watchify = require ("watchify")
+var concat = require('gulp-concat')
+
+gulp.task('js', function () {
+  gulp.src('src/js/*.js')
+  .pipe(concat('app.js'))
+  .pipe(gulp.dest('build'))
+});
+
+// Tarea 2 llamada minify-css
+gulp.task('css', function () {
+  gulp.src('src/css/*.css')
+  .pipe(concat('app.css'))
+  .pipe(gulp.dest('public'))
+});
 
 
-gulp.task('styles', function () {
+
+gulp.task('sass', function () {
   gulp
     .src('index.scss')
     .pipe(sass())
     .pipe(rename('app.css'))
-    .pipe(gulp.dest('public'))
+    .pipe(gulp.dest('src/css'))
 })
 gulp.task('assets', function () {
   gulp
@@ -20,22 +35,33 @@ gulp.task('assets', function () {
     .pipe(gulp.dest('public'))
 })
 
+
+
+
+
 function compile(watch){
-  var bundle = watchify(browserify('./src/index.js'))
-  console.log(bundle)
+  var bundle = watchify(browserify('src/index.js'))
   function rebundle () {
-    console.log('si entro')
     bundle
       .transform(babel)
       .bundle()
       .pipe(source('index.js'))
       .pipe(rename('app.js'))
+      .pipe(gulp.dest('src/js'))
+
+    gulp.src('src/js/*.js')
+      .pipe(concat('app.js'))
+      .pipe(gulp.dest('public'))
+
+    gulp
+      .src('build/*')
       .pipe(gulp.dest('public'))
   }
+  
   if (watch) {
     bundle.on('udpate', function () {
       console.log('------------> bundling...');
-      rebundle();
+      rebundle()
     })
   }
   rebundle()
@@ -44,8 +70,19 @@ function compile(watch){
 gulp.task('build', function () {
   return compile()
 })
+
 gulp.task('watch', function () {
   return compile(true)
 })
 
-gulp.task('default', ['styles','assets','build'])
+
+gulp.task('script' ,function () {
+  browserify('./src/index.js')
+    .transform(babel)
+    .bundle()
+    .pipe(source('index.js'))
+    .pipe(rename('app.js'))
+    .pipe(gulp.dest('public'))
+  })
+
+gulp.task('default', ['sass','assets','css','build'])

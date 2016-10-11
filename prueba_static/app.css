@@ -1,0 +1,59 @@
+body{
+  background:#fafafa;
+  color: #e6005c;
+  font-family: Montserrat;
+}
+
+#main-container {
+  margin: 30px auto;
+}
+
+
+#main-container .clo{
+  
+}
+
+.iphone{
+  max-width: 100%;
+}
+
+.site-footer{
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.login-box,
+.signup-box{
+  background-color: white;
+  border: 1px solid #edeeee;
+  border-radius: 3px;
+  padding: 10px 0;
+  text-align: center;
+  }
+
+.signup-box .vego {
+  font-family: Oleo Script;
+  font-size: 42px;
+    
+  }
+
+.signup-form{
+  width: 65%;
+  margin: 0 auto;
+}
+.signup-form h2{
+  color: #a5a7aa;
+  font-size: 1.2em;
+}
+
+.signup-form .btn.btn-fb{
+  background-color: #e6005c;
+  font-size: 0.9em;
+}
+.signup-form .btn.btn-fb:hover{
+  background-color: #b30047;
+}
+.signup-form .btn.btn-signup{
+  background-color: #b30047;
+}
+
