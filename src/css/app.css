@@ -6413,9 +6413,10 @@ body {
   padding: 10px 0;
   text-align: center; }
 
-.signup-box .vego {
-  font-family: Oleo Script;
-  font-size: 42px; }
+.vego {
+  font-family: Oleo Script !important;
+  font-size: 42px;
+  color: #e6005c !important; }
 
 .signup-form {
   width: 65%;
@@ -6434,3 +6435,9 @@ body {
 
 .signup-form .btn.btn-signup, .signup-form .btn-signup.btn-large {
   background-color: #b30047; }
+
+.header {
+  background-color: white;
+  color: #e6005c;
+  box-shadow: none;
+  border-bottom: 1px solid #edeeee; }

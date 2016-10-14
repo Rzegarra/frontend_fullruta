@@ -30,9 +30,10 @@ body{
   text-align: center;
   }
 
-.signup-box .vego {
-  font-family: Oleo Script;
+.vego {
+  font-family: Oleo Script !important;
   font-size: 42px;
+  color: $secondary-color !important;
     
   }
 
@@ -54,4 +55,11 @@ body{
 }
 .signup-form .btn.btn-signup{
   background-color: #b30047
+}
+
+.header{
+  background-color: white;
+  color: $secondary-color;
+  box-shadow: none;
+  border-bottom: 1px solid #edeeee;
 }

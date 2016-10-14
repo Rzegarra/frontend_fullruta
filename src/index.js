@@ -1,12 +1,11 @@
 var page = require('page')
-var yo = require('yo-yo')
 
-page('/', function (ctx, next) {
-})
+require('./js/clock')
+require('./js/flipclock')
 
-page('/signup', function (ctx, next) {
-  var main = document.getElementById('main-container')
-  main.innerHTML('<p>joder</p>')
-})
+
+require('./homepage')
+require('./signup')
+require('./signin')
 
 page()

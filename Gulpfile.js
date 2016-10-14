@@ -7,12 +7,6 @@ var source = require ('vinyl-source-stream')
 var watchify = require ("watchify")
 var concat = require('gulp-concat')
 
-gulp.task('js', function () {
-  gulp.src('src/js/*.js')
-  .pipe(concat('app.js'))
-  .pipe(gulp.dest('build'))
-});
-
 // Tarea 2 llamada minify-css
 gulp.task('css', function () {
   gulp.src('src/css/*.css')
@@ -60,6 +54,12 @@ function compile(watch){
   rebundle()
 }
 
+gulp.task('js', function () {
+  gulp.src('src/js/*.js')
+      .pipe(concat('app.js'))
+      .pipe(gulp.dest('public'))
+})
+
 gulp.task('build', function () {
   var bundle = browserify('src/index.js')
   bundle
@@ -67,15 +67,9 @@ gulp.task('build', function () {
       .bundle()
       .pipe(source('index.js'))
       .pipe(rename('app.js'))
-      .pipe(gulp.dest('src/js'))
-})
-
-gulp.task('js', function () {
-  var bundle = browserify('src/index.js')
-  gulp.src('src/js/*.js')
-      .pipe(concat('app.js'))
       .pipe(gulp.dest('public'))
 })
+
 
 
 gulp.task('watch', function () {
@@ -83,13 +77,4 @@ gulp.task('watch', function () {
 })
 
 
-gulp.task('script' ,function () {
-  browserify('./src/index.js')
-    .transform(babel)
-    .bundle()
-    .pipe(source('index.js'))
-    .pipe(rename('app.js'))
-    .pipe(gulp.dest('public'))
-  })
-
-gulp.task('default', ['sass','assets','css','build','js'])
+gulp.task('default', ['sass','build','assets','css','js'])

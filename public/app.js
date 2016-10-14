@@ -1,53 +1,2634 @@
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+
+},{}],2:[function(require,module,exports){
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],3:[function(require,module,exports){
+/* global HTMLElement */
+
+'use strict'
+
+module.exports = function emptyElement (element) {
+  if (!(element instanceof HTMLElement)) {
+    throw new TypeError('Expected an element')
+  }
+
+  var node
+  while ((node = element.lastChild)) element.removeChild(node)
+  return element
+}
+
+},{}],4:[function(require,module,exports){
+(function (process){
+  /* globals require, module */
+
+  'use strict';
+
+  /**
+   * Module dependencies.
+   */
+
+  var pathtoRegexp = require('path-to-regexp');
+
+  /**
+   * Module exports.
+   */
+
+  module.exports = page;
+
+  /**
+   * Detect click event
+   */
+  var clickEvent = ('undefined' !== typeof document) && document.ontouchstart ? 'touchstart' : 'click';
+
+  /**
+   * To work properly with the URL
+   * history.location generated polyfill in https://github.com/devote/HTML5-History-API
+   */
+
+  var location = ('undefined' !== typeof window) && (window.history.location || window.location);
+
+  /**
+   * Perform initial dispatch.
+   */
+
+  var dispatch = true;
+
+
+  /**
+   * Decode URL components (query string, pathname, hash).
+   * Accommodates both regular percent encoding and x-www-form-urlencoded format.
+   */
+  var decodeURLComponents = true;
+
+  /**
+   * Base path.
+   */
+
+  var base = '';
+
+  /**
+   * Running flag.
+   */
+
+  var running;
+
+  /**
+   * HashBang option
+   */
+
+  var hashbang = false;
+
+  /**
+   * Previous context, for capturing
+   * page exit events.
+   */
+
+  var prevContext;
+
+  /**
+   * Register `path` with callback `fn()`,
+   * or route `path`, or redirection,
+   * or `page.start()`.
+   *
+   *   page(fn);
+   *   page('*', fn);
+   *   page('/user/:id', load, user);
+   *   page('/user/' + user.id, { some: 'thing' });
+   *   page('/user/' + user.id);
+   *   page('/from', '/to')
+   *   page();
+   *
+   * @param {string|!Function|!Object} path
+   * @param {Function=} fn
+   * @api public
+   */
+
+  function page(path, fn) {
+    // <callback>
+    if ('function' === typeof path) {
+      return page('*', path);
+    }
+
+    // route <path> to <callback ...>
+    if ('function' === typeof fn) {
+      var route = new Route(/** @type {string} */ (path));
+      for (var i = 1; i < arguments.length; ++i) {
+        page.callbacks.push(route.middleware(arguments[i]));
+      }
+      // show <path> with [state]
+    } else if ('string' === typeof path) {
+      page['string' === typeof fn ? 'redirect' : 'show'](path, fn);
+      // start [options]
+    } else {
+      page.start(path);
+    }
+  }
+
+  /**
+   * Callback functions.
+   */
+
+  page.callbacks = [];
+  page.exits = [];
+
+  /**
+   * Current path being processed
+   * @type {string}
+   */
+  page.current = '';
+
+  /**
+   * Number of pages navigated to.
+   * @type {number}
+   *
+   *     page.len == 0;
+   *     page('/login');
+   *     page.len == 1;
+   */
+
+  page.len = 0;
+
+  /**
+   * Get or set basepath to `path`.
+   *
+   * @param {string} path
+   * @api public
+   */
+
+  page.base = function(path) {
+    if (0 === arguments.length) return base;
+    base = path;
+  };
+
+  /**
+   * Bind with the given `options`.
+   *
+   * Options:
+   *
+   *    - `click` bind to click events [true]
+   *    - `popstate` bind to popstate [true]
+   *    - `dispatch` perform initial dispatch [true]
+   *
+   * @param {Object} options
+   * @api public
+   */
+
+  page.start = function(options) {
+    options = options || {};
+    if (running) return;
+    running = true;
+    if (false === options.dispatch) dispatch = false;
+    if (false === options.decodeURLComponents) decodeURLComponents = false;
+    if (false !== options.popstate) window.addEventListener('popstate', onpopstate, false);
+    if (false !== options.click) {
+      document.addEventListener(clickEvent, onclick, false);
+    }
+    if (true === options.hashbang) hashbang = true;
+    if (!dispatch) return;
+    var url = (hashbang && ~location.hash.indexOf('#!')) ? location.hash.substr(2) + location.search : location.pathname + location.search + location.hash;
+    page.replace(url, null, true, dispatch);
+  };
+
+  /**
+   * Unbind click and popstate event handlers.
+   *
+   * @api public
+   */
+
+  page.stop = function() {
+    if (!running) return;
+    page.current = '';
+    page.len = 0;
+    running = false;
+    document.removeEventListener(clickEvent, onclick, false);
+    window.removeEventListener('popstate', onpopstate, false);
+  };
+
+  /**
+   * Show `path` with optional `state` object.
+   *
+   * @param {string} path
+   * @param {Object=} state
+   * @param {boolean=} dispatch
+   * @param {boolean=} push
+   * @return {!Context}
+   * @api public
+   */
+
+  page.show = function(path, state, dispatch, push) {
+    var ctx = new Context(path, state);
+    page.current = ctx.path;
+    if (false !== dispatch) page.dispatch(ctx);
+    if (false !== ctx.handled && false !== push) ctx.pushState();
+    return ctx;
+  };
+
+  /**
+   * Goes back in the history
+   * Back should always let the current route push state and then go back.
+   *
+   * @param {string} path - fallback path to go back if no more history exists, if undefined defaults to page.base
+   * @param {Object=} state
+   * @api public
+   */
+
+  page.back = function(path, state) {
+    if (page.len > 0) {
+      // this may need more testing to see if all browsers
+      // wait for the next tick to go back in history
+      history.back();
+      page.len--;
+    } else if (path) {
+      setTimeout(function() {
+        page.show(path, state);
+      });
+    }else{
+      setTimeout(function() {
+        page.show(base, state);
+      });
+    }
+  };
+
+
+  /**
+   * Register route to redirect from one path to other
+   * or just redirect to another route
+   *
+   * @param {string} from - if param 'to' is undefined redirects to 'from'
+   * @param {string=} to
+   * @api public
+   */
+  page.redirect = function(from, to) {
+    // Define route from a path to another
+    if ('string' === typeof from && 'string' === typeof to) {
+      page(from, function(e) {
+        setTimeout(function() {
+          page.replace(/** @type {!string} */ (to));
+        }, 0);
+      });
+    }
+
+    // Wait for the push state and replace it with another
+    if ('string' === typeof from && 'undefined' === typeof to) {
+      setTimeout(function() {
+        page.replace(from);
+      }, 0);
+    }
+  };
+
+  /**
+   * Replace `path` with optional `state` object.
+   *
+   * @param {string} path
+   * @param {Object=} state
+   * @param {boolean=} init
+   * @param {boolean=} dispatch
+   * @return {!Context}
+   * @api public
+   */
+
+
+  page.replace = function(path, state, init, dispatch) {
+    var ctx = new Context(path, state);
+    page.current = ctx.path;
+    ctx.init = init;
+    ctx.save(); // save before dispatching, which may redirect
+    if (false !== dispatch) page.dispatch(ctx);
+    return ctx;
+  };
+
+  /**
+   * Dispatch the given `ctx`.
+   *
+   * @param {Context} ctx
+   * @api private
+   */
+  page.dispatch = function(ctx) {
+    var prev = prevContext,
+      i = 0,
+      j = 0;
+
+    prevContext = ctx;
+
+    function nextExit() {
+      var fn = page.exits[j++];
+      if (!fn) return nextEnter();
+      fn(prev, nextExit);
+    }
+
+    function nextEnter() {
+      var fn = page.callbacks[i++];
+
+      if (ctx.path !== page.current) {
+        ctx.handled = false;
+        return;
+      }
+      if (!fn) return unhandled(ctx);
+      fn(ctx, nextEnter);
+    }
+
+    if (prev) {
+      nextExit();
+    } else {
+      nextEnter();
+    }
+  };
+
+  /**
+   * Unhandled `ctx`. When it's not the initial
+   * popstate then redirect. If you wish to handle
+   * 404s on your own use `page('*', callback)`.
+   *
+   * @param {Context} ctx
+   * @api private
+   */
+  function unhandled(ctx) {
+    if (ctx.handled) return;
+    var current;
+
+    if (hashbang) {
+      current = base + location.hash.replace('#!', '');
+    } else {
+      current = location.pathname + location.search;
+    }
+
+    if (current === ctx.canonicalPath) return;
+    page.stop();
+    ctx.handled = false;
+    location.href = ctx.canonicalPath;
+  }
+
+  /**
+   * Register an exit route on `path` with
+   * callback `fn()`, which will be called
+   * on the previous context when a new
+   * page is visited.
+   */
+  page.exit = function(path, fn) {
+    if (typeof path === 'function') {
+      return page.exit('*', path);
+    }
+
+    var route = new Route(path);
+    for (var i = 1; i < arguments.length; ++i) {
+      page.exits.push(route.middleware(arguments[i]));
+    }
+  };
+
+  /**
+   * Remove URL encoding from the given `str`.
+   * Accommodates whitespace in both x-www-form-urlencoded
+   * and regular percent-encoded form.
+   *
+   * @param {string} val - URL component to decode
+   */
+  function decodeURLEncodedURIComponent(val) {
+    if (typeof val !== 'string') { return val; }
+    return decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
+  }
+
+  /**
+   * Initialize a new "request" `Context`
+   * with the given `path` and optional initial `state`.
+   *
+   * @constructor
+   * @param {string} path
+   * @param {Object=} state
+   * @api public
+   */
+
+  function Context(path, state) {
+    if ('/' === path[0] && 0 !== path.indexOf(base)) path = base + (hashbang ? '#!' : '') + path;
+    var i = path.indexOf('?');
+
+    this.canonicalPath = path;
+    this.path = path.replace(base, '') || '/';
+    if (hashbang) this.path = this.path.replace('#!', '') || '/';
+
+    this.title = document.title;
+    this.state = state || {};
+    this.state.path = path;
+    this.querystring = ~i ? decodeURLEncodedURIComponent(path.slice(i + 1)) : '';
+    this.pathname = decodeURLEncodedURIComponent(~i ? path.slice(0, i) : path);
+    this.params = {};
+
+    // fragment
+    this.hash = '';
+    if (!hashbang) {
+      if (!~this.path.indexOf('#')) return;
+      var parts = this.path.split('#');
+      this.path = parts[0];
+      this.hash = decodeURLEncodedURIComponent(parts[1]) || '';
+      this.querystring = this.querystring.split('#')[0];
+    }
+  }
+
+  /**
+   * Expose `Context`.
+   */
+
+  page.Context = Context;
+
+  /**
+   * Push state.
+   *
+   * @api private
+   */
+
+  Context.prototype.pushState = function() {
+    page.len++;
+    history.pushState(this.state, this.title, hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
+  };
+
+  /**
+   * Save the context state.
+   *
+   * @api public
+   */
+
+  Context.prototype.save = function() {
+    history.replaceState(this.state, this.title, hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
+  };
+
+  /**
+   * Initialize `Route` with the given HTTP `path`,
+   * and an array of `callbacks` and `options`.
+   *
+   * Options:
+   *
+   *   - `sensitive`    enable case-sensitive routes
+   *   - `strict`       enable strict matching for trailing slashes
+   *
+   * @constructor
+   * @param {string} path
+   * @param {Object=} options
+   * @api private
+   */
+
+  function Route(path, options) {
+    options = options || {};
+    this.path = (path === '*') ? '(.*)' : path;
+    this.method = 'GET';
+    this.regexp = pathtoRegexp(this.path,
+      this.keys = [],
+      options);
+  }
+
+  /**
+   * Expose `Route`.
+   */
+
+  page.Route = Route;
+
+  /**
+   * Return route middleware with
+   * the given callback `fn()`.
+   *
+   * @param {Function} fn
+   * @return {Function}
+   * @api public
+   */
+
+  Route.prototype.middleware = function(fn) {
+    var self = this;
+    return function(ctx, next) {
+      if (self.match(ctx.path, ctx.params)) return fn(ctx, next);
+      next();
+    };
+  };
+
+  /**
+   * Check if this route matches `path`, if so
+   * populate `params`.
+   *
+   * @param {string} path
+   * @param {Object} params
+   * @return {boolean}
+   * @api private
+   */
+
+  Route.prototype.match = function(path, params) {
+    var keys = this.keys,
+      qsIndex = path.indexOf('?'),
+      pathname = ~qsIndex ? path.slice(0, qsIndex) : path,
+      m = this.regexp.exec(decodeURIComponent(pathname));
+
+    if (!m) return false;
+
+    for (var i = 1, len = m.length; i < len; ++i) {
+      var key = keys[i - 1];
+      var val = decodeURLEncodedURIComponent(m[i]);
+      if (val !== undefined || !(hasOwnProperty.call(params, key.name))) {
+        params[key.name] = val;
+      }
+    }
+
+    return true;
+  };
+
+
+  /**
+   * Handle "populate" events.
+   */
+
+  var onpopstate = (function () {
+    var loaded = false;
+    if ('undefined' === typeof window) {
+      return;
+    }
+    if (document.readyState === 'complete') {
+      loaded = true;
+    } else {
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          loaded = true;
+        }, 0);
+      });
+    }
+    return function onpopstate(e) {
+      if (!loaded) return;
+      if (e.state) {
+        var path = e.state.path;
+        page.replace(path, e.state);
+      } else {
+        page.show(location.pathname + location.hash, undefined, undefined, false);
+      }
+    };
+  })();
+  /**
+   * Handle "click" events.
+   */
+
+  function onclick(e) {
+
+    if (1 !== which(e)) return;
+
+    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+    if (e.defaultPrevented) return;
+
+
+
+    // ensure link
+    // use shadow dom when available
+    var el = e.path ? e.path[0] : e.target;
+    while (el && 'A' !== el.nodeName) el = el.parentNode;
+    if (!el || 'A' !== el.nodeName) return;
+
+
+
+    // Ignore if tag has
+    // 1. "download" attribute
+    // 2. rel="external" attribute
+    if (el.hasAttribute('download') || el.getAttribute('rel') === 'external') return;
+
+    // ensure non-hash for the same path
+    var link = el.getAttribute('href');
+    if (!hashbang && el.pathname === location.pathname && (el.hash || '#' === link)) return;
+
+
+
+    // Check for mailto: in the href
+    if (link && link.indexOf('mailto:') > -1) return;
+
+    // check target
+    if (el.target) return;
+
+    // x-origin
+    if (!sameOrigin(el.href)) return;
+
+
+
+    // rebuild path
+    var path = el.pathname + el.search + (el.hash || '');
+
+    // strip leading "/[drive letter]:" on NW.js on Windows
+    if (typeof process !== 'undefined' && path.match(/^\/[a-zA-Z]:\//)) {
+      path = path.replace(/^\/[a-zA-Z]:\//, '/');
+    }
+
+    // same page
+    var orig = path;
+
+    if (path.indexOf(base) === 0) {
+      path = path.substr(base.length);
+    }
+
+    if (hashbang) path = path.replace('#!', '');
+
+    if (base && orig === path) return;
+
+    e.preventDefault();
+    page.show(orig);
+  }
+
+  /**
+   * Event button.
+   */
+
+  function which(e) {
+    e = e || window.event;
+    return null === e.which ? e.button : e.which;
+  }
+
+  /**
+   * Check if `href` is the same origin.
+   */
+
+  function sameOrigin(href) {
+    var origin = location.protocol + '//' + location.hostname;
+    if (location.port) origin += ':' + location.port;
+    return (href && (0 === href.indexOf(origin)));
+  }
+
+  page.sameOrigin = sameOrigin;
+
+}).call(this,require('_process'))
+},{"_process":2,"path-to-regexp":5}],5:[function(require,module,exports){
+var isarray = require('isarray')
+
+/**
+ * Expose `pathToRegexp`.
+ */
+module.exports = pathToRegexp
+module.exports.parse = parse
+module.exports.compile = compile
+module.exports.tokensToFunction = tokensToFunction
+module.exports.tokensToRegExp = tokensToRegExp
+
+/**
+ * The main path matching regexp utility.
+ *
+ * @type {RegExp}
+ */
+var PATH_REGEXP = new RegExp([
+  // Match escaped characters that would otherwise appear in future matches.
+  // This allows the user to escape special characters that won't transform.
+  '(\\\\.)',
+  // Match Express-style parameters and un-named parameters with a prefix
+  // and optional suffixes. Matches appear as:
+  //
+  // "/:test(\\d+)?" => ["/", "test", "\d+", undefined, "?", undefined]
+  // "/route(\\d+)"  => [undefined, undefined, undefined, "\d+", undefined, undefined]
+  // "/*"            => ["/", undefined, undefined, undefined, undefined, "*"]
+  '([\\/.])?(?:(?:\\:(\\w+)(?:\\(((?:\\\\.|[^()])+)\\))?|\\(((?:\\\\.|[^()])+)\\))([+*?])?|(\\*))'
+].join('|'), 'g')
+
+/**
+ * Parse a string for the raw tokens.
+ *
+ * @param  {String} str
+ * @return {Array}
+ */
+function parse (str) {
+  var tokens = []
+  var key = 0
+  var index = 0
+  var path = ''
+  var res
+
+  while ((res = PATH_REGEXP.exec(str)) != null) {
+    var m = res[0]
+    var escaped = res[1]
+    var offset = res.index
+    path += str.slice(index, offset)
+    index = offset + m.length
+
+    // Ignore already escaped sequences.
+    if (escaped) {
+      path += escaped[1]
+      continue
+    }
+
+    // Push the current path onto the tokens.
+    if (path) {
+      tokens.push(path)
+      path = ''
+    }
+
+    var prefix = res[2]
+    var name = res[3]
+    var capture = res[4]
+    var group = res[5]
+    var suffix = res[6]
+    var asterisk = res[7]
+
+    var repeat = suffix === '+' || suffix === '*'
+    var optional = suffix === '?' || suffix === '*'
+    var delimiter = prefix || '/'
+    var pattern = capture || group || (asterisk ? '.*' : '[^' + delimiter + ']+?')
+
+    tokens.push({
+      name: name || key++,
+      prefix: prefix || '',
+      delimiter: delimiter,
+      optional: optional,
+      repeat: repeat,
+      pattern: escapeGroup(pattern)
+    })
+  }
+
+  // Match any characters still remaining.
+  if (index < str.length) {
+    path += str.substr(index)
+  }
+
+  // If the path exists, push it onto the end.
+  if (path) {
+    tokens.push(path)
+  }
+
+  return tokens
+}
+
+/**
+ * Compile a string to a template function for the path.
+ *
+ * @param  {String}   str
+ * @return {Function}
+ */
+function compile (str) {
+  return tokensToFunction(parse(str))
+}
+
+/**
+ * Expose a method for transforming tokens into the path function.
+ */
+function tokensToFunction (tokens) {
+  // Compile all the tokens into regexps.
+  var matches = new Array(tokens.length)
+
+  // Compile all the patterns before compilation.
+  for (var i = 0; i < tokens.length; i++) {
+    if (typeof tokens[i] === 'object') {
+      matches[i] = new RegExp('^' + tokens[i].pattern + '$')
+    }
+  }
+
+  return function (obj) {
+    var path = ''
+    var data = obj || {}
+
+    for (var i = 0; i < tokens.length; i++) {
+      var token = tokens[i]
+
+      if (typeof token === 'string') {
+        path += token
+
+        continue
+      }
+
+      var value = data[token.name]
+      var segment
+
+      if (value == null) {
+        if (token.optional) {
+          continue
+        } else {
+          throw new TypeError('Expected "' + token.name + '" to be defined')
+        }
+      }
+
+      if (isarray(value)) {
+        if (!token.repeat) {
+          throw new TypeError('Expected "' + token.name + '" to not repeat, but received "' + value + '"')
+        }
+
+        if (value.length === 0) {
+          if (token.optional) {
+            continue
+          } else {
+            throw new TypeError('Expected "' + token.name + '" to not be empty')
+          }
+        }
+
+        for (var j = 0; j < value.length; j++) {
+          segment = encodeURIComponent(value[j])
+
+          if (!matches[i].test(segment)) {
+            throw new TypeError('Expected all "' + token.name + '" to match "' + token.pattern + '", but received "' + segment + '"')
+          }
+
+          path += (j === 0 ? token.prefix : token.delimiter) + segment
+        }
+
+        continue
+      }
+
+      segment = encodeURIComponent(value)
+
+      if (!matches[i].test(segment)) {
+        throw new TypeError('Expected "' + token.name + '" to match "' + token.pattern + '", but received "' + segment + '"')
+      }
+
+      path += token.prefix + segment
+    }
+
+    return path
+  }
+}
+
+/**
+ * Escape a regular expression string.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+function escapeString (str) {
+  return str.replace(/([.+*?=^!:${}()[\]|\/])/g, '\\$1')
+}
+
+/**
+ * Escape the capturing group by escaping special characters and meaning.
+ *
+ * @param  {String} group
+ * @return {String}
+ */
+function escapeGroup (group) {
+  return group.replace(/([=!:$\/()])/g, '\\$1')
+}
+
+/**
+ * Attach the keys as a property of the regexp.
+ *
+ * @param  {RegExp} re
+ * @param  {Array}  keys
+ * @return {RegExp}
+ */
+function attachKeys (re, keys) {
+  re.keys = keys
+  return re
+}
+
+/**
+ * Get the flags for a regexp from the options.
+ *
+ * @param  {Object} options
+ * @return {String}
+ */
+function flags (options) {
+  return options.sensitive ? '' : 'i'
+}
+
+/**
+ * Pull out keys from a regexp.
+ *
+ * @param  {RegExp} path
+ * @param  {Array}  keys
+ * @return {RegExp}
+ */
+function regexpToRegexp (path, keys) {
+  // Use a negative lookahead to match only capturing groups.
+  var groups = path.source.match(/\((?!\?)/g)
+
+  if (groups) {
+    for (var i = 0; i < groups.length; i++) {
+      keys.push({
+        name: i,
+        prefix: null,
+        delimiter: null,
+        optional: false,
+        repeat: false,
+        pattern: null
+      })
+    }
+  }
+
+  return attachKeys(path, keys)
+}
+
+/**
+ * Transform an array into a regexp.
+ *
+ * @param  {Array}  path
+ * @param  {Array}  keys
+ * @param  {Object} options
+ * @return {RegExp}
+ */
+function arrayToRegexp (path, keys, options) {
+  var parts = []
+
+  for (var i = 0; i < path.length; i++) {
+    parts.push(pathToRegexp(path[i], keys, options).source)
+  }
+
+  var regexp = new RegExp('(?:' + parts.join('|') + ')', flags(options))
+
+  return attachKeys(regexp, keys)
+}
+
+/**
+ * Create a path regexp from string input.
+ *
+ * @param  {String} path
+ * @param  {Array}  keys
+ * @param  {Object} options
+ * @return {RegExp}
+ */
+function stringToRegexp (path, keys, options) {
+  var tokens = parse(path)
+  var re = tokensToRegExp(tokens, options)
+
+  // Attach keys back to the regexp.
+  for (var i = 0; i < tokens.length; i++) {
+    if (typeof tokens[i] !== 'string') {
+      keys.push(tokens[i])
+    }
+  }
+
+  return attachKeys(re, keys)
+}
+
+/**
+ * Expose a function for taking tokens and returning a RegExp.
+ *
+ * @param  {Array}  tokens
+ * @param  {Array}  keys
+ * @param  {Object} options
+ * @return {RegExp}
+ */
+function tokensToRegExp (tokens, options) {
+  options = options || {}
+
+  var strict = options.strict
+  var end = options.end !== false
+  var route = ''
+  var lastToken = tokens[tokens.length - 1]
+  var endsWithSlash = typeof lastToken === 'string' && /\/$/.test(lastToken)
+
+  // Iterate over the tokens and create our regexp string.
+  for (var i = 0; i < tokens.length; i++) {
+    var token = tokens[i]
+
+    if (typeof token === 'string') {
+      route += escapeString(token)
+    } else {
+      var prefix = escapeString(token.prefix)
+      var capture = token.pattern
+
+      if (token.repeat) {
+        capture += '(?:' + prefix + capture + ')*'
+      }
+
+      if (token.optional) {
+        if (prefix) {
+          capture = '(?:' + prefix + '(' + capture + '))?'
+        } else {
+          capture = '(' + capture + ')?'
+        }
+      } else {
+        capture = prefix + '(' + capture + ')'
+      }
+
+      route += capture
+    }
+  }
+
+  // In non-strict mode we allow a slash at the end of match. If the path to
+  // match already ends with a slash, we remove it for consistency. The slash
+  // is valid at the end of a path match, not in the middle. This is important
+  // in non-ending mode, where "/test/" shouldn't match "/test//route".
+  if (!strict) {
+    route = (endsWithSlash ? route.slice(0, -2) : route) + '(?:\\/(?=$))?'
+  }
+
+  if (end) {
+    route += '$'
+  } else {
+    // In non-ending mode, we need the capturing groups to match as much as
+    // possible by using a positive lookahead to the end or next path segment.
+    route += strict && endsWithSlash ? '' : '(?=\\/|$)'
+  }
+
+  return new RegExp('^' + route, flags(options))
+}
+
+/**
+ * Normalize the given path string, returning a regular expression.
+ *
+ * An empty array can be passed in for the keys, which will hold the
+ * placeholder key descriptions. For example, using `/user/:id`, `keys` will
+ * contain `[{ name: 'id', delimiter: '/', optional: false, repeat: false }]`.
+ *
+ * @param  {(String|RegExp|Array)} path
+ * @param  {Array}                 [keys]
+ * @param  {Object}                [options]
+ * @return {RegExp}
+ */
+function pathToRegexp (path, keys, options) {
+  keys = keys || []
+
+  if (!isarray(keys)) {
+    options = keys
+    keys = []
+  } else if (!options) {
+    options = {}
+  }
+
+  if (path instanceof RegExp) {
+    return regexpToRegexp(path, keys, options)
+  }
+
+  if (isarray(path)) {
+    return arrayToRegexp(path, keys, options)
+  }
+
+  return stringToRegexp(path, keys, options)
+}
+
+},{"isarray":6}],6:[function(require,module,exports){
+module.exports = Array.isArray || function (arr) {
+  return Object.prototype.toString.call(arr) == '[object Array]';
+};
+
+},{}],7:[function(require,module,exports){
+
+var orig = document.title;
+
+exports = module.exports = set;
+
+function set(str) {
+  var i = 1;
+  var args = arguments;
+  document.title = str.replace(/%[os]/g, function(_){
+    switch (_) {
+      case '%o':
+        return orig;
+      case '%s':
+        return args[i++];
+    }
+  });
+}
+
+exports.reset = function(){
+  set(orig);
+};
+
+},{}],8:[function(require,module,exports){
+var bel = require('bel') // turns template tag into DOM elements
+var morphdom = require('morphdom') // efficiently diffs + morphs two DOM elements
+var defaultEvents = require('./update-events.js') // default events to be copied when dom elements update
+
+module.exports = bel
+
+// TODO move this + defaultEvents to a new module once we receive more feedback
+module.exports.update = function (fromNode, toNode, opts) {
+  if (!opts) opts = {}
+  if (opts.events !== false) {
+    if (!opts.onBeforeElUpdated) opts.onBeforeElUpdated = copier
+  }
+
+  return morphdom(fromNode, toNode, opts)
+
+  // morphdom only copies attributes. we decided we also wanted to copy events
+  // that can be set via attributes
+  function copier (f, t) {
+    // copy events:
+    var events = opts.events || defaultEvents
+    for (var i = 0; i < events.length; i++) {
+      var ev = events[i]
+      if (t[ev]) { // if new element has a whitelisted attribute
+        f[ev] = t[ev] // update existing element
+      } else if (f[ev]) { // if existing element has it and new one doesnt
+        f[ev] = undefined // remove it from existing element
+      }
+    }
+    // copy values for form elements
+    if ((f.nodeName === 'INPUT' && f.type !== 'file') || f.nodeName === 'TEXTAREA' || f.nodeName === 'SELECT') {
+      if (t.getAttribute('value') === null) t.value = f.value
+    }
+  }
+}
+
+},{"./update-events.js":16,"bel":9,"morphdom":15}],9:[function(require,module,exports){
+var document = require('global/document')
+var hyperx = require('hyperx')
+var onload = require('on-load')
+
+var SVGNS = 'http://www.w3.org/2000/svg'
+var XLINKNS = 'http://www.w3.org/1999/xlink'
+
+var BOOL_PROPS = {
+  autofocus: 1,
+  checked: 1,
+  defaultchecked: 1,
+  disabled: 1,
+  formnovalidate: 1,
+  indeterminate: 1,
+  readonly: 1,
+  required: 1,
+  selected: 1,
+  willvalidate: 1
+}
+var SVG_TAGS = [
+  'svg',
+  'altGlyph', 'altGlyphDef', 'altGlyphItem', 'animate', 'animateColor',
+  'animateMotion', 'animateTransform', 'circle', 'clipPath', 'color-profile',
+  'cursor', 'defs', 'desc', 'ellipse', 'feBlend', 'feColorMatrix',
+  'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting',
+  'feDisplacementMap', 'feDistantLight', 'feFlood', 'feFuncA', 'feFuncB',
+  'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode',
+  'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting',
+  'feSpotLight', 'feTile', 'feTurbulence', 'filter', 'font', 'font-face',
+  'font-face-format', 'font-face-name', 'font-face-src', 'font-face-uri',
+  'foreignObject', 'g', 'glyph', 'glyphRef', 'hkern', 'image', 'line',
+  'linearGradient', 'marker', 'mask', 'metadata', 'missing-glyph', 'mpath',
+  'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect',
+  'set', 'stop', 'switch', 'symbol', 'text', 'textPath', 'title', 'tref',
+  'tspan', 'use', 'view', 'vkern'
+]
+
+function belCreateElement (tag, props, children) {
+  var el
+
+  // If an svg tag, it needs a namespace
+  if (SVG_TAGS.indexOf(tag) !== -1) {
+    props.namespace = SVGNS
+  }
+
+  // If we are using a namespace
+  var ns = false
+  if (props.namespace) {
+    ns = props.namespace
+    delete props.namespace
+  }
+
+  // Create the element
+  if (ns) {
+    el = document.createElementNS(ns, tag)
+  } else {
+    el = document.createElement(tag)
+  }
+
+  // If adding onload events
+  if (props.onload || props.onunload) {
+    var load = props.onload || function () {}
+    var unload = props.onunload || function () {}
+    onload(el, function belOnload () {
+      load(el)
+    }, function belOnunload () {
+      unload(el)
+    },
+    // We have to use non-standard `caller` to find who invokes `belCreateElement`
+    belCreateElement.caller.caller.caller)
+    delete props.onload
+    delete props.onunload
+  }
+
+  // Create the properties
+  for (var p in props) {
+    if (props.hasOwnProperty(p)) {
+      var key = p.toLowerCase()
+      var val = props[p]
+      // Normalize className
+      if (key === 'classname') {
+        key = 'class'
+        p = 'class'
+      }
+      // The for attribute gets transformed to htmlFor, but we just set as for
+      if (p === 'htmlFor') {
+        p = 'for'
+      }
+      // If a property is boolean, set itself to the key
+      if (BOOL_PROPS[key]) {
+        if (val === 'true') val = key
+        else if (val === 'false') continue
+      }
+      // If a property prefers being set directly vs setAttribute
+      if (key.slice(0, 2) === 'on') {
+        el[p] = val
+      } else {
+        if (ns) {
+          if (p === 'xlink:href') {
+            el.setAttributeNS(XLINKNS, p, val)
+          } else {
+            el.setAttributeNS(null, p, val)
+          }
+        } else {
+          el.setAttribute(p, val)
+        }
+      }
+    }
+  }
+
+  function appendChild (childs) {
+    if (!Array.isArray(childs)) return
+    for (var i = 0; i < childs.length; i++) {
+      var node = childs[i]
+      if (Array.isArray(node)) {
+        appendChild(node)
+        continue
+      }
+
+      if (typeof node === 'number' ||
+        typeof node === 'boolean' ||
+        node instanceof Date ||
+        node instanceof RegExp) {
+        node = node.toString()
+      }
+
+      if (typeof node === 'string') {
+        if (el.lastChild && el.lastChild.nodeName === '#text') {
+          el.lastChild.nodeValue += node
+          continue
+        }
+        node = document.createTextNode(node)
+      }
+
+      if (node && node.nodeType) {
+        el.appendChild(node)
+      }
+    }
+  }
+  appendChild(children)
+
+  return el
+}
+
+module.exports = hyperx(belCreateElement)
+module.exports.createElement = belCreateElement
+
+},{"global/document":10,"hyperx":12,"on-load":14}],10:[function(require,module,exports){
+(function (global){
+var topLevel = typeof global !== 'undefined' ? global :
+    typeof window !== 'undefined' ? window : {}
+var minDoc = require('min-document');
+
+if (typeof document !== 'undefined') {
+    module.exports = document;
+} else {
+    var doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
+
+    if (!doccy) {
+        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
+    }
+
+    module.exports = doccy;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"min-document":1}],11:[function(require,module,exports){
+(function (global){
+if (typeof window !== "undefined") {
+    module.exports = window;
+} else if (typeof global !== "undefined") {
+    module.exports = global;
+} else if (typeof self !== "undefined"){
+    module.exports = self;
+} else {
+    module.exports = {};
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],12:[function(require,module,exports){
+var attrToProp = require('hyperscript-attribute-to-property')
+
+var VAR = 0, TEXT = 1, OPEN = 2, CLOSE = 3, ATTR = 4
+var ATTR_KEY = 5, ATTR_KEY_W = 6
+var ATTR_VALUE_W = 7, ATTR_VALUE = 8
+var ATTR_VALUE_SQ = 9, ATTR_VALUE_DQ = 10
+var ATTR_EQ = 11, ATTR_BREAK = 12
+
+module.exports = function (h, opts) {
+  h = attrToProp(h)
+  if (!opts) opts = {}
+  var concat = opts.concat || function (a, b) {
+    return String(a) + String(b)
+  }
+
+  return function (strings) {
+    var state = TEXT, reg = ''
+    var arglen = arguments.length
+    var parts = []
+
+    for (var i = 0; i < strings.length; i++) {
+      if (i < arglen - 1) {
+        var arg = arguments[i+1]
+        var p = parse(strings[i])
+        var xstate = state
+        if (xstate === ATTR_VALUE_DQ) xstate = ATTR_VALUE
+        if (xstate === ATTR_VALUE_SQ) xstate = ATTR_VALUE
+        if (xstate === ATTR_VALUE_W) xstate = ATTR_VALUE
+        if (xstate === ATTR) xstate = ATTR_KEY
+        p.push([ VAR, xstate, arg ])
+        parts.push.apply(parts, p)
+      } else parts.push.apply(parts, parse(strings[i]))
+    }
+
+    var tree = [null,{},[]]
+    var stack = [[tree,-1]]
+    for (var i = 0; i < parts.length; i++) {
+      var cur = stack[stack.length-1][0]
+      var p = parts[i], s = p[0]
+      if (s === OPEN && /^\//.test(p[1])) {
+        var ix = stack[stack.length-1][1]
+        if (stack.length > 1) {
+          stack.pop()
+          stack[stack.length-1][0][2][ix] = h(
+            cur[0], cur[1], cur[2].length ? cur[2] : undefined
+          )
+        }
+      } else if (s === OPEN) {
+        var c = [p[1],{},[]]
+        cur[2].push(c)
+        stack.push([c,cur[2].length-1])
+      } else if (s === ATTR_KEY || (s === VAR && p[1] === ATTR_KEY)) {
+        var key = ''
+        var copyKey
+        for (; i < parts.length; i++) {
+          if (parts[i][0] === ATTR_KEY) {
+            key = concat(key, parts[i][1])
+          } else if (parts[i][0] === VAR && parts[i][1] === ATTR_KEY) {
+            if (typeof parts[i][2] === 'object' && !key) {
+              for (copyKey in parts[i][2]) {
+                if (parts[i][2].hasOwnProperty(copyKey) && !cur[1][copyKey]) {
+                  cur[1][copyKey] = parts[i][2][copyKey]
+                }
+              }
+            } else {
+              key = concat(key, parts[i][2])
+            }
+          } else break
+        }
+        if (parts[i][0] === ATTR_EQ) i++
+        var j = i
+        for (; i < parts.length; i++) {
+          if (parts[i][0] === ATTR_VALUE || parts[i][0] === ATTR_KEY) {
+            if (!cur[1][key]) cur[1][key] = strfn(parts[i][1])
+            else cur[1][key] = concat(cur[1][key], parts[i][1])
+          } else if (parts[i][0] === VAR
+          && (parts[i][1] === ATTR_VALUE || parts[i][1] === ATTR_KEY)) {
+            if (!cur[1][key]) cur[1][key] = strfn(parts[i][2])
+            else cur[1][key] = concat(cur[1][key], parts[i][2])
+          } else {
+            if (key.length && !cur[1][key] && i === j
+            && (parts[i][0] === CLOSE || parts[i][0] === ATTR_BREAK)) {
+              // https://html.spec.whatwg.org/multipage/infrastructure.html#boolean-attributes
+              // empty string is falsy, not well behaved value in browser
+              cur[1][key] = key.toLowerCase()
+            }
+            break
+          }
+        }
+      } else if (s === ATTR_KEY) {
+        cur[1][p[1]] = true
+      } else if (s === VAR && p[1] === ATTR_KEY) {
+        cur[1][p[2]] = true
+      } else if (s === CLOSE) {
+        if (selfClosing(cur[0]) && stack.length) {
+          var ix = stack[stack.length-1][1]
+          stack.pop()
+          stack[stack.length-1][0][2][ix] = h(
+            cur[0], cur[1], cur[2].length ? cur[2] : undefined
+          )
+        }
+      } else if (s === VAR && p[1] === TEXT) {
+        if (p[2] === undefined || p[2] === null) p[2] = ''
+        else if (!p[2]) p[2] = concat('', p[2])
+        if (Array.isArray(p[2][0])) {
+          cur[2].push.apply(cur[2], p[2])
+        } else {
+          cur[2].push(p[2])
+        }
+      } else if (s === TEXT) {
+        cur[2].push(p[1])
+      } else if (s === ATTR_EQ || s === ATTR_BREAK) {
+        // no-op
+      } else {
+        throw new Error('unhandled: ' + s)
+      }
+    }
+
+    if (tree[2].length > 1 && /^\s*$/.test(tree[2][0])) {
+      tree[2].shift()
+    }
+
+    if (tree[2].length > 2
+    || (tree[2].length === 2 && /\S/.test(tree[2][1]))) {
+      throw new Error(
+        'multiple root elements must be wrapped in an enclosing tag'
+      )
+    }
+    if (Array.isArray(tree[2][0]) && typeof tree[2][0][0] === 'string'
+    && Array.isArray(tree[2][0][2])) {
+      tree[2][0] = h(tree[2][0][0], tree[2][0][1], tree[2][0][2])
+    }
+    return tree[2][0]
+
+    function parse (str) {
+      var res = []
+      if (state === ATTR_VALUE_W) state = ATTR
+      for (var i = 0; i < str.length; i++) {
+        var c = str.charAt(i)
+        if (state === TEXT && c === '<') {
+          if (reg.length) res.push([TEXT, reg])
+          reg = ''
+          state = OPEN
+        } else if (c === '>' && !quot(state)) {
+          if (state === OPEN) {
+            res.push([OPEN,reg])
+          } else if (state === ATTR_KEY) {
+            res.push([ATTR_KEY,reg])
+          } else if (state === ATTR_VALUE && reg.length) {
+            res.push([ATTR_VALUE,reg])
+          }
+          res.push([CLOSE])
+          reg = ''
+          state = TEXT
+        } else if (state === TEXT) {
+          reg += c
+        } else if (state === OPEN && /\s/.test(c)) {
+          res.push([OPEN, reg])
+          reg = ''
+          state = ATTR
+        } else if (state === OPEN) {
+          reg += c
+        } else if (state === ATTR && /[\w-]/.test(c)) {
+          state = ATTR_KEY
+          reg = c
+        } else if (state === ATTR && /\s/.test(c)) {
+          if (reg.length) res.push([ATTR_KEY,reg])
+          res.push([ATTR_BREAK])
+        } else if (state === ATTR_KEY && /\s/.test(c)) {
+          res.push([ATTR_KEY,reg])
+          reg = ''
+          state = ATTR_KEY_W
+        } else if (state === ATTR_KEY && c === '=') {
+          res.push([ATTR_KEY,reg],[ATTR_EQ])
+          reg = ''
+          state = ATTR_VALUE_W
+        } else if (state === ATTR_KEY) {
+          reg += c
+        } else if ((state === ATTR_KEY_W || state === ATTR) && c === '=') {
+          res.push([ATTR_EQ])
+          state = ATTR_VALUE_W
+        } else if ((state === ATTR_KEY_W || state === ATTR) && !/\s/.test(c)) {
+          res.push([ATTR_BREAK])
+          if (/[\w-]/.test(c)) {
+            reg += c
+            state = ATTR_KEY
+          } else state = ATTR
+        } else if (state === ATTR_VALUE_W && c === '"') {
+          state = ATTR_VALUE_DQ
+        } else if (state === ATTR_VALUE_W && c === "'") {
+          state = ATTR_VALUE_SQ
+        } else if (state === ATTR_VALUE_DQ && c === '"') {
+          res.push([ATTR_VALUE,reg],[ATTR_BREAK])
+          reg = ''
+          state = ATTR
+        } else if (state === ATTR_VALUE_SQ && c === "'") {
+          res.push([ATTR_VALUE,reg],[ATTR_BREAK])
+          reg = ''
+          state = ATTR
+        } else if (state === ATTR_VALUE_W && !/\s/.test(c)) {
+          state = ATTR_VALUE
+          i--
+        } else if (state === ATTR_VALUE && /\s/.test(c)) {
+          res.push([ATTR_VALUE,reg],[ATTR_BREAK])
+          reg = ''
+          state = ATTR
+        } else if (state === ATTR_VALUE || state === ATTR_VALUE_SQ
+        || state === ATTR_VALUE_DQ) {
+          reg += c
+        }
+      }
+      if (state === TEXT && reg.length) {
+        res.push([TEXT,reg])
+        reg = ''
+      } else if (state === ATTR_VALUE && reg.length) {
+        res.push([ATTR_VALUE,reg])
+        reg = ''
+      } else if (state === ATTR_VALUE_DQ && reg.length) {
+        res.push([ATTR_VALUE,reg])
+        reg = ''
+      } else if (state === ATTR_VALUE_SQ && reg.length) {
+        res.push([ATTR_VALUE,reg])
+        reg = ''
+      } else if (state === ATTR_KEY) {
+        res.push([ATTR_KEY,reg])
+        reg = ''
+      }
+      return res
+    }
+  }
+
+  function strfn (x) {
+    if (typeof x === 'function') return x
+    else if (typeof x === 'string') return x
+    else if (x && typeof x === 'object') return x
+    else return concat('', x)
+  }
+}
+
+function quot (state) {
+  return state === ATTR_VALUE_SQ || state === ATTR_VALUE_DQ
+}
+
+var hasOwn = Object.prototype.hasOwnProperty
+function has (obj, key) { return hasOwn.call(obj, key) }
+
+var closeRE = RegExp('^(' + [
+  'area', 'base', 'basefont', 'bgsound', 'br', 'col', 'command', 'embed',
+  'frame', 'hr', 'img', 'input', 'isindex', 'keygen', 'link', 'meta', 'param',
+  'source', 'track', 'wbr',
+  // SVG TAGS
+  'animate', 'animateTransform', 'circle', 'cursor', 'desc', 'ellipse',
+  'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite',
+  'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap',
+  'feDistantLight', 'feFlood', 'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR',
+  'feGaussianBlur', 'feImage', 'feMergeNode', 'feMorphology',
+  'feOffset', 'fePointLight', 'feSpecularLighting', 'feSpotLight', 'feTile',
+  'feTurbulence', 'font-face-format', 'font-face-name', 'font-face-uri',
+  'glyph', 'glyphRef', 'hkern', 'image', 'line', 'missing-glyph', 'mpath',
+  'path', 'polygon', 'polyline', 'rect', 'set', 'stop', 'tref', 'use', 'view',
+  'vkern'
+].join('|') + ')(?:[\.#][a-zA-Z0-9\u007F-\uFFFF_:-]+)*$')
+function selfClosing (tag) { return closeRE.test(tag) }
+
+},{"hyperscript-attribute-to-property":13}],13:[function(require,module,exports){
+module.exports = attributeToProperty
+
+var transform = {
+  'class': 'className',
+  'for': 'htmlFor',
+  'http-equiv': 'httpEquiv'
+}
+
+function attributeToProperty (h) {
+  return function (tagName, attrs, children) {
+    for (var attr in attrs) {
+      if (attr in transform) {
+        attrs[transform[attr]] = attrs[attr]
+        delete attrs[attr]
+      }
+    }
+    return h(tagName, attrs, children)
+  }
+}
+
+},{}],14:[function(require,module,exports){
+/* global MutationObserver */
+var document = require('global/document')
+var window = require('global/window')
+var watch = Object.create(null)
+var KEY_ID = 'onloadid' + (new Date() % 9e6).toString(36)
+var KEY_ATTR = 'data-' + KEY_ID
+var INDEX = 0
+
+if (window && window.MutationObserver) {
+  var observer = new MutationObserver(function (mutations) {
+    if (Object.keys(watch).length < 1) return
+    for (var i = 0; i < mutations.length; i++) {
+      if (mutations[i].attributeName === KEY_ATTR) {
+        eachAttr(mutations[i], turnon, turnoff)
+        continue
+      }
+      eachMutation(mutations[i].removedNodes, turnoff)
+      eachMutation(mutations[i].addedNodes, turnon)
+    }
+  })
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeOldValue: true,
+    attributeFilter: [KEY_ATTR]
+  })
+}
+
+module.exports = function onload (el, on, off, caller) {
+  on = on || function () {}
+  off = off || function () {}
+  el.setAttribute(KEY_ATTR, 'o' + INDEX)
+  watch['o' + INDEX] = [on, off, 0, caller || onload.caller]
+  INDEX += 1
+  return el
+}
+
+function turnon (index, el) {
+  if (watch[index][0] && watch[index][2] === 0) {
+    watch[index][0](el)
+    watch[index][2] = 1
+  }
+}
+
+function turnoff (index, el) {
+  if (watch[index][1] && watch[index][2] === 1) {
+    watch[index][1](el)
+    watch[index][2] = 0
+  }
+}
+
+function eachAttr (mutation, on, off) {
+  var newValue = mutation.target.getAttribute(KEY_ATTR)
+  if (sameOrigin(mutation.oldValue, newValue)) {
+    watch[newValue] = watch[mutation.oldValue]
+    return
+  }
+  if (watch[mutation.oldValue]) {
+    off(mutation.oldValue, mutation.target)
+  }
+  if (watch[newValue]) {
+    on(newValue, mutation.target)
+  }
+}
+
+function sameOrigin (oldValue, newValue) {
+  if (!oldValue || !newValue) return false
+  return watch[oldValue][3] === watch[newValue][3]
+}
+
+function eachMutation (nodes, fn) {
+  var keys = Object.keys(watch)
+  for (var i = 0; i < nodes.length; i++) {
+    if (nodes[i] && nodes[i].getAttribute && nodes[i].getAttribute(KEY_ATTR)) {
+      var onloadid = nodes[i].getAttribute(KEY_ATTR)
+      keys.forEach(function (k) {
+        if (onloadid === k) {
+          fn(k, nodes[i])
+        }
+      })
+    }
+    if (nodes[i].childNodes.length > 0) {
+      eachMutation(nodes[i].childNodes, fn)
+    }
+  }
+}
+
+},{"global/document":10,"global/window":11}],15:[function(require,module,exports){
+'use strict';
+// Create a range object for efficently rendering strings to elements.
+var range;
+
+var doc = typeof document !== 'undefined' && document;
+
+var testEl = doc ?
+    doc.body || doc.createElement('div') :
+    {};
+
+var NS_XHTML = 'http://www.w3.org/1999/xhtml';
+
+var ELEMENT_NODE = 1;
+var TEXT_NODE = 3;
+var COMMENT_NODE = 8;
+
+// Fixes <https://github.com/patrick-steele-idem/morphdom/issues/32>
+// (IE7+ support) <=IE7 does not support el.hasAttribute(name)
+var hasAttributeNS;
+
+if (testEl.hasAttributeNS) {
+    hasAttributeNS = function(el, namespaceURI, name) {
+        return el.hasAttributeNS(namespaceURI, name);
+    };
+} else if (testEl.hasAttribute) {
+    hasAttributeNS = function(el, namespaceURI, name) {
+        return el.hasAttribute(name);
+    };
+} else {
+    hasAttributeNS = function(el, namespaceURI, name) {
+        return !!el.getAttributeNode(name);
+    };
+}
+
+function toElement(str) {
+    if (!range && doc.createRange) {
+        range = doc.createRange();
+        range.selectNode(doc.body);
+    }
+
+    var fragment;
+    if (range && range.createContextualFragment) {
+        fragment = range.createContextualFragment(str);
+    } else {
+        fragment = doc.createElement('body');
+        fragment.innerHTML = str;
+    }
+    return fragment.childNodes[0];
+}
+
+function syncBooleanAttrProp(fromEl, toEl, name) {
+    if (fromEl[name] !== toEl[name]) {
+        fromEl[name] = toEl[name];
+        if (fromEl[name]) {
+            fromEl.setAttribute(name, '');
+        } else {
+            fromEl.removeAttribute(name, '');
+        }
+    }
+}
+
+var specialElHandlers = {
+    /**
+     * Needed for IE. Apparently IE doesn't think that "selected" is an
+     * attribute when reading over the attributes using selectEl.attributes
+     */
+    OPTION: function(fromEl, toEl) {
+        syncBooleanAttrProp(fromEl, toEl, 'selected');
+    },
+    /**
+     * The "value" attribute is special for the <input> element since it sets
+     * the initial value. Changing the "value" attribute without changing the
+     * "value" property will have no effect since it is only used to the set the
+     * initial value.  Similar for the "checked" attribute, and "disabled".
+     */
+    INPUT: function(fromEl, toEl) {
+        syncBooleanAttrProp(fromEl, toEl, 'checked');
+        syncBooleanAttrProp(fromEl, toEl, 'disabled');
+
+        if (fromEl.value !== toEl.value) {
+            fromEl.value = toEl.value;
+        }
+
+        if (!hasAttributeNS(toEl, null, 'value')) {
+            fromEl.removeAttribute('value');
+        }
+    },
+
+    TEXTAREA: function(fromEl, toEl) {
+        var newValue = toEl.value;
+        if (fromEl.value !== newValue) {
+            fromEl.value = newValue;
+        }
+
+        if (fromEl.firstChild) {
+            fromEl.firstChild.nodeValue = newValue;
+        }
+    }
+};
+
+function noop() {}
+
+/**
+ * Returns true if two node's names are the same.
+ *
+ * NOTE: We don't bother checking `namespaceURI` because you will never find two HTML elements with the same
+ *       nodeName and different namespace URIs.
+ *
+ * @param {Element} a
+ * @param {Element} b The target element
+ * @return {boolean}
+ */
+function compareNodeNames(fromEl, toEl) {
+    var fromNodeName = fromEl.nodeName;
+    var toNodeName = toEl.nodeName;
+
+    if (fromNodeName === toNodeName) {
+        return true;
+    }
+
+    if (toEl.actualize &&
+        fromNodeName.charCodeAt(0) < 91 && /* from tag name is upper case */
+        toNodeName.charCodeAt(0) > 90 /* target tag name is lower case */) {
+        // If the target element is a virtual DOM node then we may need to normalize the tag name
+        // before comparing. Normal HTML elements that are in the "http://www.w3.org/1999/xhtml"
+        // are converted to upper case
+        return fromNodeName === toNodeName.toUpperCase();
+    } else {
+        return false;
+    }
+}
+
+/**
+ * Create an element, optionally with a known namespace URI.
+ *
+ * @param {string} name the element name, e.g. 'div' or 'svg'
+ * @param {string} [namespaceURI] the element's namespace URI, i.e. the value of
+ * its `xmlns` attribute or its inferred namespace.
+ *
+ * @return {Element}
+ */
+function createElementNS(name, namespaceURI) {
+    return !namespaceURI || namespaceURI === NS_XHTML ?
+        doc.createElement(name) :
+        doc.createElementNS(namespaceURI, name);
+}
+
+/**
+ * Loop over all of the attributes on the target node and make sure the original
+ * DOM node has the same attributes. If an attribute found on the original node
+ * is not on the new node then remove it from the original node.
+ *
+ * @param  {Element} fromNode
+ * @param  {Element} toNode
+ */
+function morphAttrs(fromNode, toNode) {
+    var attrs = toNode.attributes;
+    var i;
+    var attr;
+    var attrName;
+    var attrNamespaceURI;
+    var attrValue;
+    var fromValue;
+
+    if (toNode.assignAttributes) {
+        toNode.assignAttributes(fromNode);
+    } else {
+        for (i = attrs.length - 1; i >= 0; --i) {
+            attr = attrs[i];
+            attrName = attr.name;
+            attrNamespaceURI = attr.namespaceURI;
+            attrValue = attr.value;
+
+            if (attrNamespaceURI) {
+                attrName = attr.localName || attrName;
+                fromValue = fromNode.getAttributeNS(attrNamespaceURI, attrName);
+
+                if (fromValue !== attrValue) {
+                    fromNode.setAttributeNS(attrNamespaceURI, attrName, attrValue);
+                }
+            } else {
+                fromValue = fromNode.getAttribute(attrName);
+
+                if (fromValue !== attrValue) {
+                    fromNode.setAttribute(attrName, attrValue);
+                }
+            }
+        }
+    }
+
+    // Remove any extra attributes found on the original DOM element that
+    // weren't found on the target element.
+    attrs = fromNode.attributes;
+
+    for (i = attrs.length - 1; i >= 0; --i) {
+        attr = attrs[i];
+        if (attr.specified !== false) {
+            attrName = attr.name;
+            attrNamespaceURI = attr.namespaceURI;
+
+            if (attrNamespaceURI) {
+                attrName = attr.localName || attrName;
+
+                if (!hasAttributeNS(toNode, attrNamespaceURI, attrName)) {
+                    fromNode.removeAttributeNS(attrNamespaceURI, attrName);
+                }
+            } else {
+                if (!hasAttributeNS(toNode, null, attrName)) {
+                    fromNode.removeAttribute(attrName);
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Copies the children of one DOM element to another DOM element
+ */
+function moveChildren(fromEl, toEl) {
+    var curChild = fromEl.firstChild;
+    while (curChild) {
+        var nextChild = curChild.nextSibling;
+        toEl.appendChild(curChild);
+        curChild = nextChild;
+    }
+    return toEl;
+}
+
+function defaultGetNodeKey(node) {
+    return node.id;
+}
+
+function morphdom(fromNode, toNode, options) {
+    if (!options) {
+        options = {};
+    }
+
+    if (typeof toNode === 'string') {
+        if (fromNode.nodeName === '#document' || fromNode.nodeName === 'HTML') {
+            var toNodeHtml = toNode;
+            toNode = doc.createElement('html');
+            toNode.innerHTML = toNodeHtml;
+        } else {
+            toNode = toElement(toNode);
+        }
+    }
+
+    var getNodeKey = options.getNodeKey || defaultGetNodeKey;
+    var onBeforeNodeAdded = options.onBeforeNodeAdded || noop;
+    var onNodeAdded = options.onNodeAdded || noop;
+    var onBeforeElUpdated = options.onBeforeElUpdated || noop;
+    var onElUpdated = options.onElUpdated || noop;
+    var onBeforeNodeDiscarded = options.onBeforeNodeDiscarded || noop;
+    var onNodeDiscarded = options.onNodeDiscarded || noop;
+    var onBeforeElChildrenUpdated = options.onBeforeElChildrenUpdated || noop;
+    var childrenOnly = options.childrenOnly === true;
+
+    // This object is used as a lookup to quickly find all keyed elements in the original DOM tree.
+    var fromNodesLookup = {};
+    var keyedRemovalList;
+
+    function addKeyedRemoval(key) {
+        if (keyedRemovalList) {
+            keyedRemovalList.push(key);
+        } else {
+            keyedRemovalList = [key];
+        }
+    }
+
+    function walkDiscardedChildNodes(node, skipKeyedNodes) {
+        if (node.nodeType === ELEMENT_NODE) {
+            var curChild = node.firstChild;
+            while (curChild) {
+
+                var key = undefined;
+
+                if (skipKeyedNodes && (key = getNodeKey(curChild))) {
+                    // If we are skipping keyed nodes then we add the key
+                    // to a list so that it can be handled at the very end.
+                    addKeyedRemoval(key);
+                } else {
+                    // Only report the node as discarded if it is not keyed. We do this because
+                    // at the end we loop through all keyed elements that were unmatched
+                    // and then discard them in one final pass.
+                    onNodeDiscarded(curChild);
+                    if (curChild.firstChild) {
+                        walkDiscardedChildNodes(curChild, skipKeyedNodes);
+                    }
+                }
+
+                curChild = curChild.nextSibling;
+            }
+        }
+    }
+
+    /**
+     * Removes a DOM node out of the original DOM
+     *
+     * @param  {Node} node The node to remove
+     * @param  {Node} parentNode The nodes parent
+     * @param  {Boolean} skipKeyedNodes If true then elements with keys will be skipped and not discarded.
+     * @return {undefined}
+     */
+    function removeNode(node, parentNode, skipKeyedNodes) {
+        if (onBeforeNodeDiscarded(node) === false) {
+            return;
+        }
+
+        if (parentNode) {
+            parentNode.removeChild(node);
+        }
+
+        onNodeDiscarded(node);
+        walkDiscardedChildNodes(node, skipKeyedNodes);
+    }
+
+    // // TreeWalker implementation is no faster, but keeping this around in case this changes in the future
+    // function indexTree(root) {
+    //     var treeWalker = document.createTreeWalker(
+    //         root,
+    //         NodeFilter.SHOW_ELEMENT);
+    //
+    //     var el;
+    //     while((el = treeWalker.nextNode())) {
+    //         var key = getNodeKey(el);
+    //         if (key) {
+    //             fromNodesLookup[key] = el;
+    //         }
+    //     }
+    // }
+
+    // // NodeIterator implementation is no faster, but keeping this around in case this changes in the future
+    //
+    // function indexTree(node) {
+    //     var nodeIterator = document.createNodeIterator(node, NodeFilter.SHOW_ELEMENT);
+    //     var el;
+    //     while((el = nodeIterator.nextNode())) {
+    //         var key = getNodeKey(el);
+    //         if (key) {
+    //             fromNodesLookup[key] = el;
+    //         }
+    //     }
+    // }
+
+    function indexTree(node) {
+        if (node.nodeType === ELEMENT_NODE) {
+            var curChild = node.firstChild;
+            while (curChild) {
+                var key = getNodeKey(curChild);
+                if (key) {
+                    fromNodesLookup[key] = curChild;
+                }
+
+                // Walk recursively
+                indexTree(curChild);
+
+                curChild = curChild.nextSibling;
+            }
+        }
+    }
+
+    indexTree(fromNode);
+
+    function handleNodeAdded(el) {
+        onNodeAdded(el);
+
+        var curChild = el.firstChild;
+        while (curChild) {
+            var nextSibling = curChild.nextSibling;
+
+            var key = getNodeKey(curChild);
+            if (key) {
+                var unmatchedFromEl = fromNodesLookup[key];
+                if (unmatchedFromEl && compareNodeNames(curChild, unmatchedFromEl)) {
+                    curChild.parentNode.replaceChild(unmatchedFromEl, curChild);
+                    morphEl(unmatchedFromEl, curChild);
+                }
+            }
+
+            handleNodeAdded(curChild);
+            curChild = nextSibling;
+        }
+    }
+
+    function morphEl(fromEl, toEl, childrenOnly) {
+        var toElKey = getNodeKey(toEl);
+        var curFromNodeKey;
+
+        if (toElKey) {
+            // If an element with an ID is being morphed then it is will be in the final
+            // DOM so clear it out of the saved elements collection
+            delete fromNodesLookup[toElKey];
+        }
+
+        if (toNode.isSameNode && toNode.isSameNode(fromNode)) {
+            return;
+        }
+
+        if (!childrenOnly) {
+            if (onBeforeElUpdated(fromEl, toEl) === false) {
+                return;
+            }
+
+            morphAttrs(fromEl, toEl);
+            onElUpdated(fromEl);
+
+            if (onBeforeElChildrenUpdated(fromEl, toEl) === false) {
+                return;
+            }
+        }
+
+        if (fromEl.nodeName !== 'TEXTAREA') {
+            var curToNodeChild = toEl.firstChild;
+            var curFromNodeChild = fromEl.firstChild;
+            var curToNodeKey;
+
+            var fromNextSibling;
+            var toNextSibling;
+            var matchingFromEl;
+
+            outer: while (curToNodeChild) {
+                toNextSibling = curToNodeChild.nextSibling;
+                curToNodeKey = getNodeKey(curToNodeChild);
+
+                while (curFromNodeChild) {
+                    fromNextSibling = curFromNodeChild.nextSibling;
+
+                    if (curToNodeChild.isSameNode && curToNodeChild.isSameNode(curFromNodeChild)) {
+                        curToNodeChild = toNextSibling;
+                        curFromNodeChild = fromNextSibling;
+                        continue outer;
+                    }
+
+                    curFromNodeKey = getNodeKey(curFromNodeChild);
+
+                    var curFromNodeType = curFromNodeChild.nodeType;
+
+                    var isCompatible = undefined;
+
+                    if (curFromNodeType === curToNodeChild.nodeType) {
+                        if (curFromNodeType === ELEMENT_NODE) {
+                            // Both nodes being compared are Element nodes
+
+                            if (curToNodeKey) {
+                                // The target node has a key so we want to match it up with the correct element
+                                // in the original DOM tree
+                                if (curToNodeKey !== curFromNodeKey) {
+                                    // The current element in the original DOM tree does not have a matching key so
+                                    // let's check our lookup to see if there is a matching element in the original
+                                    // DOM tree
+                                    if ((matchingFromEl = fromNodesLookup[curToNodeKey])) {
+                                        if (curFromNodeChild.nextSibling === matchingFromEl) {
+                                            // Special case for single element removals. To avoid removing the original
+                                            // DOM node out of the tree (since that can break CSS transitions, etc.),
+                                            // we will instead discard the current node and wait until the next
+                                            // iteration to properly match up the keyed target element with its matching
+                                            // element in the original tree
+                                            isCompatible = false;
+                                        } else {
+                                            // We found a matching keyed element somewhere in the original DOM tree.
+                                            // Let's moving the original DOM node into the current position and morph
+                                            // it.
+
+                                            // NOTE: We use insertBefore instead of replaceChild because we want to go through
+                                            // the `removeNode()` function for the node that is being discarded so that
+                                            // all lifecycle hooks are correctly invoked
+                                            fromEl.insertBefore(matchingFromEl, curFromNodeChild);
+
+                                            if (curFromNodeKey) {
+                                                // Since the node is keyed it might be matched up later so we defer
+                                                // the actual removal to later
+                                                addKeyedRemoval(curFromNodeKey);
+                                            } else {
+                                                // NOTE: we skip nested keyed nodes from being removed since there is
+                                                //       still a chance they will be matched up later
+                                                removeNode(curFromNodeChild, fromEl, true /* skip keyed nodes */);
+
+                                            }
+                                            fromNextSibling = curFromNodeChild.nextSibling;
+                                            curFromNodeChild = matchingFromEl;
+                                        }
+                                    } else {
+                                        // The nodes are not compatible since the "to" node has a key and there
+                                        // is no matching keyed node in the source tree
+                                        isCompatible = false;
+                                    }
+                                }
+                            } else if (curFromNodeKey) {
+                                // The original has a key
+                                isCompatible = false;
+                            }
+
+                            isCompatible = isCompatible !== false && compareNodeNames(curFromNodeChild, curToNodeChild);
+                            if (isCompatible) {
+                                // We found compatible DOM elements so transform
+                                // the current "from" node to match the current
+                                // target DOM node.
+                                morphEl(curFromNodeChild, curToNodeChild);
+                            }
+
+                        } else if (curFromNodeType === TEXT_NODE || curFromNodeType == COMMENT_NODE) {
+                            // Both nodes being compared are Text or Comment nodes
+                            isCompatible = true;
+                            // Simply update nodeValue on the original node to
+                            // change the text value
+                            curFromNodeChild.nodeValue = curToNodeChild.nodeValue;
+                        }
+                    }
+
+                    if (isCompatible) {
+                        // Advance both the "to" child and the "from" child since we found a match
+                        curToNodeChild = toNextSibling;
+                        curFromNodeChild = fromNextSibling;
+                        continue outer;
+                    }
+
+                    // No compatible match so remove the old node from the DOM and continue trying to find a
+                    // match in the original DOM. However, we only do this if the from node is not keyed
+                    // since it is possible that a keyed node might match up with a node somewhere else in the
+                    // target tree and we don't want to discard it just yet since it still might find a
+                    // home in the final DOM tree. After everything is done we will remove any keyed nodes
+                    // that didn't find a home
+                    if (curFromNodeKey) {
+                        // Since the node is keyed it might be matched up later so we defer
+                        // the actual removal to later
+                        addKeyedRemoval(curFromNodeKey);
+                    } else {
+                        // NOTE: we skip nested keyed nodes from being removed since there is
+                        //       still a chance they will be matched up later
+                        removeNode(curFromNodeChild, fromEl, true /* skip keyed nodes */);
+                    }
+
+                    curFromNodeChild = fromNextSibling;
+                }
+
+                // If we got this far then we did not find a candidate match for
+                // our "to node" and we exhausted all of the children "from"
+                // nodes. Therefore, we will just append the current "to" node
+                // to the end
+                if (curToNodeKey && (matchingFromEl = fromNodesLookup[curToNodeKey]) && compareNodeNames(matchingFromEl, curToNodeChild)) {
+                    fromEl.appendChild(matchingFromEl);
+                    morphEl(matchingFromEl, curToNodeChild);
+                } else {
+                    var onBeforeNodeAddedResult = onBeforeNodeAdded(curToNodeChild);
+                    if (onBeforeNodeAddedResult !== false) {
+                        if (onBeforeNodeAddedResult) {
+                            curToNodeChild = onBeforeNodeAddedResult;
+                        }
+
+                        if (curToNodeChild.actualize) {
+                            curToNodeChild = curToNodeChild.actualize(fromEl.ownerDocument || doc);
+                        }
+                        fromEl.appendChild(curToNodeChild);
+                        handleNodeAdded(curToNodeChild);
+                    }
+                }
+
+                curToNodeChild = toNextSibling;
+                curFromNodeChild = fromNextSibling;
+            }
+
+            // We have processed all of the "to nodes". If curFromNodeChild is
+            // non-null then we still have some from nodes left over that need
+            // to be removed
+            while (curFromNodeChild) {
+                fromNextSibling = curFromNodeChild.nextSibling;
+                if ((curFromNodeKey = getNodeKey(curFromNodeChild))) {
+                    // Since the node is keyed it might be matched up later so we defer
+                    // the actual removal to later
+                    addKeyedRemoval(curFromNodeKey);
+                } else {
+                    // NOTE: we skip nested keyed nodes from being removed since there is
+                    //       still a chance they will be matched up later
+                    removeNode(curFromNodeChild, fromEl, true /* skip keyed nodes */);
+                }
+                curFromNodeChild = fromNextSibling;
+            }
+        }
+
+        var specialElHandler = specialElHandlers[fromEl.nodeName];
+        if (specialElHandler) {
+            specialElHandler(fromEl, toEl);
+        }
+    } // END: morphEl(...)
+
+    var morphedNode = fromNode;
+    var morphedNodeType = morphedNode.nodeType;
+    var toNodeType = toNode.nodeType;
+
+    if (!childrenOnly) {
+        // Handle the case where we are given two DOM nodes that are not
+        // compatible (e.g. <div> --> <span> or <div> --> TEXT)
+        if (morphedNodeType === ELEMENT_NODE) {
+            if (toNodeType === ELEMENT_NODE) {
+                if (!compareNodeNames(fromNode, toNode)) {
+                    onNodeDiscarded(fromNode);
+                    morphedNode = moveChildren(fromNode, createElementNS(toNode.nodeName, toNode.namespaceURI));
+                }
+            } else {
+                // Going from an element node to a text node
+                morphedNode = toNode;
+            }
+        } else if (morphedNodeType === TEXT_NODE || morphedNodeType === COMMENT_NODE) { // Text or comment node
+            if (toNodeType === morphedNodeType) {
+                morphedNode.nodeValue = toNode.nodeValue;
+                return morphedNode;
+            } else {
+                // Text node to something else
+                morphedNode = toNode;
+            }
+        }
+    }
+
+    if (morphedNode === toNode) {
+        // The "to node" was not compatible with the "from node" so we had to
+        // toss out the "from node" and use the "to node"
+        onNodeDiscarded(fromNode);
+    } else {
+        morphEl(morphedNode, toNode, childrenOnly);
+
+        // We now need to loop over any keyed nodes that might need to be
+        // removed. We only do the removal if we know that the keyed node
+        // never found a match. When a keyed node is matched up we remove
+        // it out of fromNodesLookup and we use fromNodesLookup to determine
+        // if a keyed node has been matched up or not
+        if (keyedRemovalList) {
+            for (var i=0, len=keyedRemovalList.length; i<len; i++) {
+                var elToRemove = fromNodesLookup[keyedRemovalList[i]];
+                if (elToRemove) {
+                    removeNode(elToRemove, elToRemove.parentNode, false);
+                }
+            }
+        }
+    }
+
+    if (!childrenOnly && morphedNode !== fromNode && fromNode.parentNode) {
+        if (morphedNode.actualize) {
+            morphedNode = morphedNode.actualize(fromNode.ownerDocument || doc);
+        }
+        // If we had to swap out the from node with a new node because the old
+        // node was not compatible with the target node then we need to
+        // replace the old DOM node in the original DOM tree. This is only
+        // possible if the original DOM node was part of a DOM tree which
+        // we know is the case if it has a parent node.
+        fromNode.parentNode.replaceChild(morphedNode, fromNode);
+    }
+
+    return morphedNode;
+}
+
+module.exports = morphdom;
+
+},{}],16:[function(require,module,exports){
+module.exports = [
+  // attribute events (can be set with attributes)
+  'onclick',
+  'ondblclick',
+  'onmousedown',
+  'onmouseup',
+  'onmouseover',
+  'onmousemove',
+  'onmouseout',
+  'ondragstart',
+  'ondrag',
+  'ondragenter',
+  'ondragleave',
+  'ondragover',
+  'ondrop',
+  'ondragend',
+  'onkeydown',
+  'onkeypress',
+  'onkeyup',
+  'onunload',
+  'onabort',
+  'onerror',
+  'onresize',
+  'onscroll',
+  'onselect',
+  'onchange',
+  'onsubmit',
+  'onreset',
+  'onfocus',
+  'onblur',
+  'oninput',
+  // other common events
+  'oncontextmenu',
+  'onfocusin',
+  'onfocusout'
+]
+
+},{}],17:[function(require,module,exports){
+var page = require('page');
+var empty = require('empty-element');
+var template = require('./template');
+var title = require('title');
+
+page('/', function (ctx, next) {
+  title('vego');
+  var main = document.getElementById('main-container');
+  empty(main).appendChild(template);
+});
+
+},{"./template":18,"empty-element":3,"page":4,"title":7}],18:[function(require,module,exports){
+var yo = require('yo-yo');
+
+var template = yo`<nav class="header">
+                    <div class="nav-wrapper">
+                      <div class="container">
+                        <div class="row">
+                          <div class="col s12 m6 offset-m1">
+                            <a href="/" class="brand-logo vego">Vego</a>
+                          </div>
+                          <div class="col s2 m6 push-m10">
+                            <a href="#" class="btn btn-large btn-flat dropdown-button" data-activates="drop-user">
+                              <i class="fa fa-user" aria-hidden="true"></i>
+                            </a>
+                            <ul id="drop-user" class="dropdown-content">
+                              <li><a href="#">Salir</a></li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </nav>`;
+module.exports = template;
+
+},{"yo-yo":8}],19:[function(require,module,exports){
+var page = require('page');
+
+require('./js/clock');
+require('./js/flipclock');
+
+require('./homepage');
+require('./signup');
+require('./signin');
+
+page();
+
+},{"./homepage":17,"./js/clock":20,"./js/flipclock":21,"./signin":23,"./signup":25,"page":4}],20:[function(require,module,exports){
 var clock;
-$(document).ready(function() {
-            var currentDate = new Date();
-            var futureDate  = new Date("October 19, 2016 18:00:00");
-            var diff = futureDate.getTime() / 1000 - currentDate.getTime() / 1000;
-            clock = $('.clock').FlipClock(diff, {
-              clockFace: 'DailyCounter',
-              countdown: true
-            });
-          });
+$(document).ready(function () {
+  var currentDate = new Date();
+  var futureDate = new Date("October 19, 2016 18:00:00");
+  var diff = futureDate.getTime() / 1000 - currentDate.getTime() / 1000;
+  clock = $('.clock').FlipClock(diff, {
+    clockFace: 'DailyCounter',
+    countdown: true
+  });
+});
+
+},{}],21:[function(require,module,exports){
 /*
 	Base.js, version 1.1a
 	Copyright 2006-2010, Dean Edwards
 	License: http://www.opensource.org/licenses/mit-license.php
 */
 
-var Base = function() {
+var Base = function () {
 	// dummy
 };
 
-Base.extend = function(_instance, _static) { // subclass
-	
+Base.extend = function (_instance, _static) {
+	// subclass
+
 	"use strict";
-	
+
 	var extend = Base.prototype.extend;
-	
+
 	// build the prototype
 	Base._prototyping = true;
 	var proto = new this();
 	extend.call(proto, _instance);
-  proto.base = function() {
-    // call this method from any other method to invoke that method's ancestor
-  };
+	proto.base = function () {
+		// call this method from any other method to invoke that method's ancestor
+	};
 	delete Base._prototyping;
-	
+
 	// create the wrapper for the constructor function
 	//var constructor = proto.constructor.valueOf(); //-dean
 	var constructor = proto.constructor;
-	var klass = proto.constructor = function() {
+	var klass = proto.constructor = function () {
 		if (!Base._prototyping) {
-			if (this._constructing || this.constructor == klass) { // instantiation
+			if (this._constructing || this.constructor == klass) {
+				// instantiation
 				this._constructing = true;
 				constructor.apply(this, arguments);
 				delete this._constructing;
-			} else if (arguments[0] !== null) { // casting
+			} else if (arguments[0] !== null) {
+				// casting
 				return (arguments[0].extend || extend).call(arguments[0], proto);
 			}
 		}
 	};
-	
+
 	// build the class interface
 	klass.ancestor = this;
 	klass.extend = this.extend;
@@ -55,9 +2636,9 @@ Base.extend = function(_instance, _static) { // subclass
 	klass.implement = this.implement;
 	klass.prototype = proto;
 	klass.toString = this.toString;
-	klass.valueOf = function(type) {
+	klass.valueOf = function (type) {
 		//return (type == "object") ? klass : constructor; //-dean
-		return (type == "object") ? klass : constructor.valueOf();
+		return type == "object" ? klass : constructor.valueOf();
 	};
 	extend.call(klass, _static);
 	// class initialisation
@@ -65,18 +2646,18 @@ Base.extend = function(_instance, _static) { // subclass
 	return klass;
 };
 
-Base.prototype = {	
-	extend: function(source, value) {
-		if (arguments.length > 1) { // extending with a name/value pair
+Base.prototype = {
+	extend: function (source, value) {
+		if (arguments.length > 1) {
+			// extending with a name/value pair
 			var ancestor = this[source];
-			if (ancestor && (typeof value == "function") && // overriding a method?
-				// the valueOf() comparison is to avoid circular references
-				(!ancestor.valueOf || ancestor.valueOf() != value.valueOf()) &&
-				/\bbase\b/.test(value)) {
+			if (ancestor && typeof value == "function" && ( // overriding a method?
+			// the valueOf() comparison is to avoid circular references
+			!ancestor.valueOf || ancestor.valueOf() != value.valueOf()) && /\bbase\b/.test(value)) {
 				// get the underlying method
 				var method = value.valueOf();
 				// override
-				value = function() {
+				value = function () {
 					var previous = this.base || Base.prototype.base;
 					this.base = ancestor;
 					var returnValue = method.apply(this, arguments);
@@ -84,19 +2665,20 @@ Base.prototype = {
 					return returnValue;
 				};
 				// point to the underlying method
-				value.valueOf = function(type) {
-					return (type == "object") ? value : method;
+				value.valueOf = function (type) {
+					return type == "object" ? value : method;
 				};
 				value.toString = Base.toString;
 			}
 			this[source] = value;
-		} else if (source) { // extending with an object literal
+		} else if (source) {
+			// extending with an object literal
 			var extend = Base.prototype.extend;
 			// if this object has a customised extend method then use it
 			if (!Base._prototyping && typeof this != "function") {
 				extend = this.extend || extend;
 			}
-			var proto = {toSource: null};
+			var proto = { toSource: null };
 			// do the "toString" and other methods manually
 			var hidden = ["constructor", "toString", "valueOf"];
 			// if we are prototyping then include the constructor
@@ -104,7 +2686,6 @@ Base.prototype = {
 			while (key = hidden[i++]) {
 				if (source[key] != proto[key]) {
 					extend.call(this, key, source[key]);
-
 				}
 			}
 			// copy each of the source object's properties to this object
@@ -118,22 +2699,22 @@ Base.prototype = {
 
 // initialise
 Base = Base.extend({
-	constructor: function() {
+	constructor: function () {
 		this.extend(arguments[0]);
 	}
 }, {
 	ancestor: Object,
 	version: "1.1",
-	
-	forEach: function(object, block, context) {
+
+	forEach: function (object, block, context) {
 		for (var key in object) {
 			if (this.prototype[key] === undefined) {
 				block.call(context, object[key], key, object);
 			}
 		}
 	},
-		
-	implement: function() {
+
+	implement: function () {
 		for (var i = 0; i < arguments.length; i++) {
 			if (typeof arguments[i] == "function") {
 				// if it's a function, call it
@@ -145,15 +2726,15 @@ Base = Base.extend({
 		}
 		return this;
 	},
-	
-	toString: function() {
+
+	toString: function () {
 		return String(this.valueOf());
 	}
 });
 /*jshint smarttabs:true */
 
 var FlipClock;
-	
+
 /**
  * FlipClock.js
  *
@@ -161,177 +2742,177 @@ var FlipClock;
  * @copyright  2013 - Objective HTML, LLC
  * @licesnse   http://www.opensource.org/licenses/mit-license.php
  */
-	
-(function($) {
-	
+
+(function ($) {
+
 	"use strict";
-	
+
 	/**
-	 * FlipFlock Helper
-	 *
-	 * @param  object  A jQuery object or CSS select
-	 * @param  int     An integer used to start the clock (no. seconds)
-	 * @param  object  An object of properties to override the default	
-	 */
-	 
-	FlipClock = function(obj, digit, options) {
+  * FlipFlock Helper
+  *
+  * @param  object  A jQuery object or CSS select
+  * @param  int     An integer used to start the clock (no. seconds)
+  * @param  object  An object of properties to override the default	
+  */
+
+	FlipClock = function (obj, digit, options) {
 		return new FlipClock.Factory(obj, digit, options);
 	};
 
 	/**
-	 * The global FlipClock.Lang object
-	 */
+  * The global FlipClock.Lang object
+  */
 
 	FlipClock.Lang = {};
-	
+
 	/**
-	 * The Base FlipClock class is used to extend all other FlipFlock
-	 * classes. It handles the callbacks and the basic setters/getters
-	 *	
-	 * @param 	object  An object of the default properties
-	 * @param 	object  An object of properties to override the default	
-	 */
+  * The Base FlipClock class is used to extend all other FlipFlock
+  * classes. It handles the callbacks and the basic setters/getters
+  *	
+  * @param 	object  An object of the default properties
+  * @param 	object  An object of properties to override the default	
+  */
 
 	FlipClock.Base = Base.extend({
-		
+
 		/**
-		 * Build Date
-		 */
-		 
+   * Build Date
+   */
+
 		buildDate: '2013-11-07',
-		
+
 		/**
-		 * Version
-		 */
-		 
+   * Version
+   */
+
 		version: '0.3.1',
-		
+
 		/**
-		 * Sets the default options
-		 *
-		 * @param	object 	The default options
-		 * @param	object 	The override options
-		 */
-		 
-		constructor: function(_default, options) {
-			if(typeof _default !== "object") {
+   * Sets the default options
+   *
+   * @param	object 	The default options
+   * @param	object 	The override options
+   */
+
+		constructor: function (_default, options) {
+			if (typeof _default !== "object") {
 				_default = {};
 			}
-			if(typeof options !== "object") {
+			if (typeof options !== "object") {
 				options = {};
 			}
 			this.setOptions($.extend(true, {}, _default, options));
 		},
-		
+
 		/**
-		 * Delegates the callback to the defined method
-		 *
-		 * @param	object 	The default options
-		 * @param	object 	The override options
-		 */
-		 
-		callback: function(method) {
-		 	if(typeof method === "function") {
+   * Delegates the callback to the defined method
+   *
+   * @param	object 	The default options
+   * @param	object 	The override options
+   */
+
+		callback: function (method) {
+			if (typeof method === "function") {
 				var args = [];
-								
-				for(var x = 1; x <= arguments.length; x++) {
-					if(arguments[x]) {
+
+				for (var x = 1; x <= arguments.length; x++) {
+					if (arguments[x]) {
 						args.push(arguments[x]);
 					}
 				}
-				
+
 				method.apply(this, args);
 			}
 		},
-		 
+
 		/**
-		 * Log a string into the console if it exists
-		 *
-		 * @param 	string 	The name of the option
-		 * @return	mixed
-		 */		
-		 
-		log: function(str) {
-			if(window.console && console.log) {
+   * Log a string into the console if it exists
+   *
+   * @param 	string 	The name of the option
+   * @return	mixed
+   */
+
+		log: function (str) {
+			if (window.console && console.log) {
 				console.log(str);
 			}
 		},
-		 
+
 		/**
-		 * Get an single option value. Returns false if option does not exist
-		 *
-		 * @param 	string 	The name of the option
-		 * @return	mixed
-		 */		
-		 
-		getOption: function(index) {
-			if(this[index]) {
+   * Get an single option value. Returns false if option does not exist
+   *
+   * @param 	string 	The name of the option
+   * @return	mixed
+   */
+
+		getOption: function (index) {
+			if (this[index]) {
 				return this[index];
 			}
 			return false;
 		},
-		
+
 		/**
-		 * Get all options
-		 *
-		 * @return	bool
-		 */		
-		 
-		getOptions: function() {
+   * Get all options
+   *
+   * @return	bool
+   */
+
+		getOptions: function () {
 			return this;
 		},
-		
+
 		/**
-		 * Set a single option value
-		 *
-		 * @param 	string 	The name of the option
-		 * @param 	mixed 	The value of the option
-		 */		
-		 
-		setOption: function(index, value) {
+   * Set a single option value
+   *
+   * @param 	string 	The name of the option
+   * @param 	mixed 	The value of the option
+   */
+
+		setOption: function (index, value) {
 			this[index] = value;
 		},
-		
+
 		/**
-		 * Set a multiple options by passing a JSON object
-		 *
-		 * @param 	object 	The object with the options
-		 * @param 	mixed 	The value of the option
-		 */		
-		
-		setOptions: function(options) {
-			for(var key in options) {
-	  			if(typeof options[key] !== "undefined") {
-		  			this.setOption(key, options[key]);
-		  		}
-		  	}
+   * Set a multiple options by passing a JSON object
+   *
+   * @param 	object 	The object with the options
+   * @param 	mixed 	The value of the option
+   */
+
+		setOptions: function (options) {
+			for (var key in options) {
+				if (typeof options[key] !== "undefined") {
+					this.setOption(key, options[key]);
+				}
+			}
 		}
-		
+
 	});
-	
+
 	/**
-	 * The FlipClock Factory class is used to build the clock and manage
-	 * all the public methods.
-	 *
-	 * @param 	object  A jQuery object or CSS selector used to fetch
-	 				    the wrapping DOM nodes
-	 * @param 	mixed   This is the digit used to set the clock. If an 
-	 				    object is passed, 0 will be used.	
-	 * @param 	object  An object of properties to override the default	
-	 */
-	 	
+  * The FlipClock Factory class is used to build the clock and manage
+  * all the public methods.
+  *
+  * @param 	object  A jQuery object or CSS selector used to fetch
+  				    the wrapping DOM nodes
+  * @param 	mixed   This is the digit used to set the clock. If an 
+  				    object is passed, 0 will be used.	
+  * @param 	object  An object of properties to override the default	
+  */
+
 	FlipClock.Factory = FlipClock.Base.extend({
-		
+
 		/**
-		 * Auto start the clock on page load (True|False)
-		 */	
-		 
+   * Auto start the clock on page load (True|False)
+   */
+
 		autoStart: true,
-		
+
 		/**
-		 * The callback methods
-		 */		
-		 
+   * The callback methods
+   */
+
 		callbacks: {
 			destroy: false,
 			create: false,
@@ -341,11 +2922,11 @@ var FlipClock;
 			stop: false,
 			reset: false
 		},
-		
+
 		/**
-		 * The CSS classes
-		 */		
-		 
+   * The CSS classes
+   */
+
 		classes: {
 			active: 'flip-clock-active',
 			before: 'flip-clock-before',
@@ -356,385 +2937,372 @@ var FlipClock;
 			play: 'play',
 			wrapper: 'flip-clock-wrapper'
 		},
-		
+
 		/**
-		 * The name of the clock face class in use
-		 */	
-		 
+   * The name of the clock face class in use
+   */
+
 		clockFace: 'HourlyCounter',
-		 
+
 		/**
-		 * The name of the default clock face class to use if the defined
-		 * clockFace variable is not a valid FlipClock.Face object
-		 */	
-		 
+   * The name of the default clock face class to use if the defined
+   * clockFace variable is not a valid FlipClock.Face object
+   */
+
 		defaultClockFace: 'HourlyCounter',
-		 
+
 		/**
-		 * The default language
-		 */	
-		 
+   * The default language
+   */
+
 		defaultLanguage: 'english',
-		 
+
 		/**
-		 * The language being used to display labels (string)
-		 */	
-		 
+   * The language being used to display labels (string)
+   */
+
 		language: 'english',
-		 
+
 		/**
-		 * The language object after it has been loaded
-		 */	
-		 
+   * The language object after it has been loaded
+   */
+
 		lang: false,
-		 
+
 		/**
-		 * The FlipClock.Face object
-		 */	
-		 
+   * The FlipClock.Face object
+   */
+
 		face: true,
-		 
+
 		/**
-		 * Is the clock running? (True|False)
-		 */		
-		 
+   * Is the clock running? (True|False)
+   */
+
 		running: false,
-		
+
 		/**
-		 * The FlipClock.Time object
-		 */		
-		 
+   * The FlipClock.Time object
+   */
+
 		time: false,
-		
+
 		/**
-		 * The FlipClock.Timer object
-		 */		
-		 
+   * The FlipClock.Timer object
+   */
+
 		timer: false,
-		
+
 		/**
-		 * An array of FlipClock.List objects
-		 */		
-		 
+   * An array of FlipClock.List objects
+   */
+
 		lists: [],
-		
+
 		/**
-		 * The wrapping jQuery object
-		 */		
-		 
+   * The wrapping jQuery object
+   */
+
 		$wrapper: false,
-		
+
 		/**
-		 * Constructor
-		 *
-		 * @param   object  The wrapping jQuery object
-		 * @param	object  Number of seconds used to start the clock
-		 * @param	object 	An object override options
-		 */
-		 
-		constructor: function(obj, digit, options) {
-			
-			this.lists 	  = [];
-			this.running  = false;
-			this.base(options);		
+   * Constructor
+   *
+   * @param   object  The wrapping jQuery object
+   * @param	object  Number of seconds used to start the clock
+   * @param	object 	An object override options
+   */
+
+		constructor: function (obj, digit, options) {
+
+			this.lists = [];
+			this.running = false;
+			this.base(options);
 			this.$wrapper = $(obj).addClass(this.classes.wrapper);
-			this.time     = new FlipClock.Time(this, digit ? Math.round(digit) : 0);
-			this.timer    = new FlipClock.Timer(this, options);
+			this.time = new FlipClock.Time(this, digit ? Math.round(digit) : 0);
+			this.timer = new FlipClock.Timer(this, options);
 
-			this.lang     = this.loadLanguage(this.language);
-			this.face     = this.loadClockFace(this.clockFace, options);
+			this.lang = this.loadLanguage(this.language);
+			this.face = this.loadClockFace(this.clockFace, options);
 
-			if(this.autoStart) {
+			if (this.autoStart) {
 				this.start();
 			}
 		},
-		
+
 		/**
-		 * Load the FlipClock.Face object
-		 *
-		 * @param	object  The name of the FlickClock.Face class
-		 * @param	object 	An object override options
-		 */
-		 
-		loadClockFace: function(name, options) {	
-			var face, suffix = 'Face';
-			
-			name = name.ucfirst()+suffix;
-			
-			if(FlipClock[name]) {
+   * Load the FlipClock.Face object
+   *
+   * @param	object  The name of the FlickClock.Face class
+   * @param	object 	An object override options
+   */
+
+		loadClockFace: function (name, options) {
+			var face,
+			    suffix = 'Face';
+
+			name = name.ucfirst() + suffix;
+
+			if (FlipClock[name]) {
 				face = new FlipClock[name](this, options);
+			} else {
+				face = new FlipClock[this.defaultClockFace + suffix](this, options);
 			}
-			else {
-				face = new FlipClock[this.defaultClockFace+suffix](this, options);
-			}
-			
+
 			face.build();
-				
+
 			return face;
 		},
-			
-		
+
 		/**
-		 * Load the FlipClock.Lang object
-		 *
-		 * @param	object  The name of the language to load
-		 */
-		 
-		loadLanguage: function(name) {	
+   * Load the FlipClock.Lang object
+   *
+   * @param	object  The name of the language to load
+   */
+
+		loadLanguage: function (name) {
 			var lang;
-			
-			if(FlipClock.Lang[name.ucfirst()]) {
+
+			if (FlipClock.Lang[name.ucfirst()]) {
 				lang = FlipClock.Lang[name.ucfirst()];
-			}
-			else if(FlipClock.Lang[name]) {
+			} else if (FlipClock.Lang[name]) {
 				lang = FlipClock.Lang[name];
-			}
-			else {
+			} else {
 				lang = FlipClock.Lang[this.defaultLanguage];
 			}
-			
+
 			return lang;
 		},
-					
-		/**
-		 * Localize strings into various languages
-		 *
-		 * @param	string  The index of the localized string
-		 * @param	object  Optionally pass a lang object
-		 */
 
-		localize: function(index, obj) {
+		/**
+   * Localize strings into various languages
+   *
+   * @param	string  The index of the localized string
+   * @param	object  Optionally pass a lang object
+   */
+
+		localize: function (index, obj) {
 			var lang = this.lang;
 
-			if(!index) {
+			if (!index) {
 				return null;
 			}
 
 			var lindex = index.toLowerCase();
 
-			if(typeof obj == "object") {
+			if (typeof obj == "object") {
 				lang = obj;
 			}
 
-			if(lang && lang[lindex]) {
+			if (lang && lang[lindex]) {
 				return lang[lindex];
 			}
 
 			return index;
 		},
-		 
 
 		/**
-		 * Starts the clock
-		 */
-		 
-		start: function(callback) {
+   * Starts the clock
+   */
+
+		start: function (callback) {
 			var t = this;
 
-			if(!t.running && (!t.countdown || t.countdown && t.time.time > 0)) {
+			if (!t.running && (!t.countdown || t.countdown && t.time.time > 0)) {
 				t.face.start(t.time);
-				t.timer.start(function() {
+				t.timer.start(function () {
 					t.flip();
-					
-					if(typeof callback === "function") {
+
+					if (typeof callback === "function") {
 						callback();
-					}	
+					}
 				});
-			}
-			else {
+			} else {
 				t.log('Trying to start timer when countdown already at 0');
 			}
 		},
-		
+
 		/**
-		 * Stops the clock
-		 */
-		 
-		stop: function(callback) {
+   * Stops the clock
+   */
+
+		stop: function (callback) {
 			this.face.stop();
 			this.timer.stop(callback);
-			
-			for(var x in this.lists) {
+
+			for (var x in this.lists) {
 				this.lists[x].stop();
-			}	
+			}
 		},
-		
+
 		/**
-		 * Reset the clock
-		 */
-		 
-		reset: function(callback) {
+   * Reset the clock
+   */
+
+		reset: function (callback) {
 			this.timer.reset(callback);
 			this.face.reset();
 		},
-		
+
 		/**
-		 * Sets the clock time
-		 */
-		 
-		setTime: function(time) {
+   * Sets the clock time
+   */
+
+		setTime: function (time) {
 			this.time.time = time;
-			this.face.setTime(time);		
+			this.face.setTime(time);
 		},
-		
+
 		/**
-		 * Get the clock time
-		 *
-		 * @return  object  Returns a FlipClock.Time object
-		 */
-		 
-		getTime: function(time) {
-			return this.time;		
+   * Get the clock time
+   *
+   * @return  object  Returns a FlipClock.Time object
+   */
+
+		getTime: function (time) {
+			return this.time;
 		},
-		
+
 		/**
-		 * Changes the increment of time to up or down (add/sub)
-		 */
-		 
-		setCountdown: function(value) {
+   * Changes the increment of time to up or down (add/sub)
+   */
+
+		setCountdown: function (value) {
 			var running = this.running;
-			
+
 			this.countdown = value ? true : false;
-				
-			if(running) {
+
+			if (running) {
 				this.stop();
 				this.start();
 			}
 		},
-		
+
 		/**
-		 * Flip the digits on the clock
-		 *
-		 * @param  array  An array of digits	 
-		 */
-		flip: function() {
+   * Flip the digits on the clock
+   *
+   * @param  array  An array of digits	 
+   */
+		flip: function () {
 			this.face.flip();
 		}
-		
+
 	});
-	
+
 	/**
-	 * The FlipClock Face class is the base class in which to extend
-	 * all other FlockClock.Face classes.
-	 *
-	 * @param 	object  The parent FlipClock.Factory object
-	 * @param 	object  An object of properties to override the default	
-	 */
-	 
+  * The FlipClock Face class is the base class in which to extend
+  * all other FlockClock.Face classes.
+  *
+  * @param 	object  The parent FlipClock.Factory object
+  * @param 	object  An object of properties to override the default	
+  */
+
 	FlipClock.Face = FlipClock.Base.extend({
-		
+
 		/**
-		 * An array of jQuery objects used for the dividers (the colons)
-		 */
-		 
+   * An array of jQuery objects used for the dividers (the colons)
+   */
+
 		dividers: [],
 
 		/**
-		 * An array of FlipClock.List objects
-		 */		
-		 
+   * An array of FlipClock.List objects
+   */
+
 		factory: false,
-		
+
 		/**
-		 * An array of FlipClock.List objects
-		 */		
-		 
+   * An array of FlipClock.List objects
+   */
+
 		lists: [],
-			
+
 		/**
-		 * Constructor
-		 *
-		 * @param 	object  The parent FlipClock.Factory object
-		 * @param 	object  An object of properties to override the default	
-		 */
-		 
-		constructor: function(factory, options) {
+   * Constructor
+   *
+   * @param 	object  The parent FlipClock.Factory object
+   * @param 	object  An object of properties to override the default	
+   */
+
+		constructor: function (factory, options) {
 			this.base(options);
-			this.factory  = factory;
+			this.factory = factory;
 			this.dividers = [];
 		},
-		
+
 		/**
-		 * Build the clock face
-		 */
-		 
-		build: function() {},
-		
+   * Build the clock face
+   */
+
+		build: function () {},
+
 		/**
-		 * Creates a jQuery object used for the digit divider
-		 *
-		 * @param	mixed 	The divider label text
-		 * @param	mixed	Set true to exclude the dots in the divider. 
-		 *					If not set, is false.
-		 */
-		 
-		createDivider: function(label, css, excludeDots) {
-		
-			if(typeof css == "boolean" || !css) {
+   * Creates a jQuery object used for the digit divider
+   *
+   * @param	mixed 	The divider label text
+   * @param	mixed	Set true to exclude the dots in the divider. 
+   *					If not set, is false.
+   */
+
+		createDivider: function (label, css, excludeDots) {
+
+			if (typeof css == "boolean" || !css) {
 				excludeDots = css;
 				css = label;
 			}
 
-			var dots = [
-				'<span class="'+this.factory.classes.dot+' top"></span>',
-				'<span class="'+this.factory.classes.dot+' bottom"></span>'
-			].join('');
+			var dots = ['<span class="' + this.factory.classes.dot + ' top"></span>', '<span class="' + this.factory.classes.dot + ' bottom"></span>'].join('');
 
-			if(excludeDots) {
-				dots = '';	
+			if (excludeDots) {
+				dots = '';
 			}
 
 			label = this.factory.localize(label);
 
-			var html = [
-				'<span class="'+this.factory.classes.divider+' '+(css ? css : '').toLowerCase()+'">',
-					'<span class="'+this.factory.classes.label+'">'+(label ? label : '')+'</span>',
-					dots,
-				'</span>'
-			];	
-			
+			var html = ['<span class="' + this.factory.classes.divider + ' ' + (css ? css : '').toLowerCase() + '">', '<span class="' + this.factory.classes.label + '">' + (label ? label : '') + '</span>', dots, '</span>'];
+
 			return $(html.join(''));
 		},
-		
+
 		/**
-		 * Creates a FlipClock.List object and appends it to the DOM
-		 *
-		 * @param	mixed 	The digit to select in the list
-		 * @param	object  An object to override the default properties
-		 */
-		 
-		createList: function(digit, options) {
-			if(typeof digit === "object") {
+   * Creates a FlipClock.List object and appends it to the DOM
+   *
+   * @param	mixed 	The digit to select in the list
+   * @param	object  An object to override the default properties
+   */
+
+		createList: function (digit, options) {
+			if (typeof digit === "object") {
 				options = digit;
 				digit = 0;
 			}
-			
+
 			var obj = new FlipClock.List(this.factory, digit, options);
 
 			//this.factory.$wrapper.append(obj.$obj);	
-			
+
 			return obj;
 		},
-		
+
 		/**
-		 * Triggers when the clock is reset
-		 */
-		 
-		reset: function() {},
-		
+   * Triggers when the clock is reset
+   */
+
+		reset: function () {},
+
 		/**
-		 * Sets the clock time
-		 */
-		 
-		setTime: function(time) {
-			this.flip(time);		
+   * Sets the clock time
+   */
+
+		setTime: function (time) {
+			this.flip(time);
 		},
-		
+
 		/**
-		 * Sets the clock time
-		 */
-		 
-		addDigit: function(digit) {
+   * Sets the clock time
+   */
+
+		addDigit: function (digit) {
 			var obj = this.createList(digit, {
 				classes: {
 					active: this.factory.classes.active,
@@ -742,373 +3310,351 @@ var FlipClock;
 					flip: this.factory.classes.flip
 				}
 			});
-			
+
 			obj.$obj.insertBefore(this.factory.lists[0].$obj);
-							
+
 			this.factory.lists.unshift(obj);
 		},
-		
+
 		/**
-		 * Triggers when the clock is started
-		 */
-		 
-		start: function() {},
-		
+   * Triggers when the clock is started
+   */
+
+		start: function () {},
+
 		/**
-		 * Triggers when the time on the clock stops
-		 */
-		 
-		stop: function() {},
-			
+   * Triggers when the time on the clock stops
+   */
+
+		stop: function () {},
+
 		/**
-		 * Triggers when the numbers on the clock flip
-		 */
-		 
-		flip: function(time, doNotAddPlayClass) {
+   * Triggers when the numbers on the clock flip
+   */
+
+		flip: function (time, doNotAddPlayClass) {
 			var t = this;
-			
-			if(!doNotAddPlayClass) {
-				if(!t.factory.countdown) {
+
+			if (!doNotAddPlayClass) {
+				if (!t.factory.countdown) {
 					t.factory.time.time++;
-				}
-				else {
-					if(t.factory.time.time <= 0) {
+				} else {
+					if (t.factory.time.time <= 0) {
 						t.factory.stop();
 					}
-					
-					t.factory.time.time--;	
+
+					t.factory.time.time--;
 				}
 			}
-			
+
 			var offset = t.factory.lists.length - time.length;
-			
-			if(offset < 0) {
+
+			if (offset < 0) {
 				offset = 0;
-			}			
-			
+			}
+
 			var totalNew = 0;
 			var reFlip = false;
 
-			$.each(time, function(i, digit) {
+			$.each(time, function (i, digit) {
 				i += offset;
-				
+
 				var list = t.factory.lists[i];
-					
-				if(list) {
+
+				if (list) {
 					var currentDigit = list.digit;
-			
+
 					list.select(digit);
-					
-					if(digit != currentDigit && !doNotAddPlayClass) {
-						list.play();	
+
+					if (digit != currentDigit && !doNotAddPlayClass) {
+						list.play();
 					}
-				}	
-				else {
+				} else {
 					t.addDigit(digit);
 					reFlip = true;
 				}
 			});
 
-			for(var x = 0; x < time.length; x++) {
-				if(x >= offset && t.factory.lists[x].digit != time[x]) {
+			for (var x = 0; x < time.length; x++) {
+				if (x >= offset && t.factory.lists[x].digit != time[x]) {
 					t.factory.lists[x].select(time[x]);
 				}
 			}
 		}
-					
+
 	});
-		
+
 	/**
-	 * The FlipClock List class is used to build the list used to create 
-	 * the card flip effect. This object fascilates selecting the correct
-	 * node by passing a specific digit.
-	 *
-	 * @param 	object  A FlipClock.Factory object
-	 * @param 	mixed   This is the digit used to set the clock. If an 
-	 *				    object is passed, 0 will be used.	
-	 * @param 	object  An object of properties to override the default	
-	 */
-	 	
+  * The FlipClock List class is used to build the list used to create 
+  * the card flip effect. This object fascilates selecting the correct
+  * node by passing a specific digit.
+  *
+  * @param 	object  A FlipClock.Factory object
+  * @param 	mixed   This is the digit used to set the clock. If an 
+  *				    object is passed, 0 will be used.	
+  * @param 	object  An object of properties to override the default	
+  */
+
 	FlipClock.List = FlipClock.Base.extend({
-		
+
 		/**
-		 * The digit (0-9)
-		 */		
-		 
+   * The digit (0-9)
+   */
+
 		digit: 0,
-		
+
 		/**
-		 * The CSS classes
-		 */		
-		 
+   * The CSS classes
+   */
+
 		classes: {
 			active: 'flip-clock-active',
 			before: 'flip-clock-before',
-			flip: 'flip'	
+			flip: 'flip'
 		},
-				
+
 		/**
-		 * The parent FlipClock.Factory object
-		 */		
-		 
+   * The parent FlipClock.Factory object
+   */
+
 		factory: false,
-		
+
 		/**
-		 * The wrapping jQuery object
-		 */		
-		 
+   * The wrapping jQuery object
+   */
+
 		$obj: false,
-		
+
 		/**
-		 * The items in the list
-		 */		
-		 
+   * The items in the list
+   */
+
 		items: [],
-				 
+
 		/**
-		 * Constructor
-		 *
-		 * @param  object  A FlipClock.Factory object
-		 * @param  int     An integer use to select the correct digit
-		 * @param  object  An object to override the default properties	 
-		 */
-		 
-		constructor: function(factory, digit, options) {
+   * Constructor
+   *
+   * @param  object  A FlipClock.Factory object
+   * @param  int     An integer use to select the correct digit
+   * @param  object  An object to override the default properties	 
+   */
+
+		constructor: function (factory, digit, options) {
 			this.factory = factory;
-			this.digit   = digit;
-			this.$obj    = this.createList();
-			
-			if(digit > 0) {
+			this.digit = digit;
+			this.$obj = this.createList();
+
+			if (digit > 0) {
 				this.select(digit);
 			}
-			
+
 			this.factory.$wrapper.append(this.$obj);
 		},
-		
+
 		/**
-		 * Select the digit in the list
-		 *
-		 * @param  int  A digit 0-9	 
-		 */
-		 
-		select: function(digit) {
-			if(typeof digit === "undefined") {
+   * Select the digit in the list
+   *
+   * @param  int  A digit 0-9	 
+   */
+
+		select: function (digit) {
+			if (typeof digit === "undefined") {
 				digit = this.digit;
-			}
-			else {
+			} else {
 				this.digit = digit;
 			}
 
-			var target = this.$obj.find('[data-digit="'+digit+'"]');
-			var active = this.$obj.find('.'+this.classes.active).removeClass(this.classes.active);
-			var before = this.$obj.find('.'+this.classes.before).removeClass(this.classes.before);
-			
-			if(!this.factory.countdown) {
-				if(target.is(':first-child')) {
+			var target = this.$obj.find('[data-digit="' + digit + '"]');
+			var active = this.$obj.find('.' + this.classes.active).removeClass(this.classes.active);
+			var before = this.$obj.find('.' + this.classes.before).removeClass(this.classes.before);
+
+			if (!this.factory.countdown) {
+				if (target.is(':first-child')) {
 					this.$obj.find(':last-child').addClass(this.classes.before);
-				}
-				else {
+				} else {
 					target.prev().addClass(this.classes.before);
 				}
-			}
-			else {
-				if(target.is(':last-child')) {
+			} else {
+				if (target.is(':last-child')) {
 					this.$obj.find(':first-child').addClass(this.classes.before);
-				}
-				else {
+				} else {
 					target.next().addClass(this.classes.before);
 				}
 			}
-			
-			target.addClass(this.classes.active);			
+
+			target.addClass(this.classes.active);
 		},
-		
+
 		/**
-		 * Adds the play class to the DOM object
-		 */
-		 		
-		play: function() {
+   * Adds the play class to the DOM object
+   */
+
+		play: function () {
 			this.$obj.addClass(this.factory.classes.play);
 		},
-		
+
 		/**
-		 * Removes the play class to the DOM object 
-		 */
-		 
-		stop: function() {
+   * Removes the play class to the DOM object 
+   */
+
+		stop: function () {
 			var t = this;
-			
-			setTimeout(function() {
+
+			setTimeout(function () {
 				t.$obj.removeClass(t.factory.classes.play);
 			}, this.factory.timer.interval);
 		},
-		
+
 		/**
-		 * Create the list of digits and appends it to the DOM object 
-		 */
-		 
-		createList: function() {
-		
-			var html = $('<ul class="'+this.classes.flip+' '+(this.factory.running ? this.factory.classes.play : '')+'" />');
-			
-			for(var x = 0; x < 10; x++) {
-				var item = $([
-				'<li data-digit="'+x+'">',
-					'<a href="#">',
-						'<div class="up">',
-							'<div class="shadow"></div>',
-							'<div class="inn">'+x+'</div>',
-						'</div>',
-						'<div class="down">',
-							'<div class="shadow"></div>',
-							'<div class="inn">'+x+'</div>',
-						'</div>',
-					'</a>',
-				'</li>'].join(''));
-				
+   * Create the list of digits and appends it to the DOM object 
+   */
+
+		createList: function () {
+
+			var html = $('<ul class="' + this.classes.flip + ' ' + (this.factory.running ? this.factory.classes.play : '') + '" />');
+
+			for (var x = 0; x < 10; x++) {
+				var item = $(['<li data-digit="' + x + '">', '<a href="#">', '<div class="up">', '<div class="shadow"></div>', '<div class="inn">' + x + '</div>', '</div>', '<div class="down">', '<div class="shadow"></div>', '<div class="inn">' + x + '</div>', '</div>', '</a>', '</li>'].join(''));
+
 				this.items.push(item);
-				
+
 				html.append(item);
 			}
-						
+
 			return html;
 		}
 	});
-		
+
 	/**
-	 * The FlipClock Time class is used to manage all the time 
-	 * calculations.
-	 *
-	 * @param 	object  A FlipClock.Factory object
-	 * @param 	mixed   This is the digit used to set the clock. If an 
-	 *				    object is passed, 0 will be used.	
-	 * @param 	object  An object of properties to override the default	
-	 */
-	 	
+  * The FlipClock Time class is used to manage all the time 
+  * calculations.
+  *
+  * @param 	object  A FlipClock.Factory object
+  * @param 	mixed   This is the digit used to set the clock. If an 
+  *				    object is passed, 0 will be used.	
+  * @param 	object  An object of properties to override the default	
+  */
+
 	FlipClock.Time = FlipClock.Base.extend({
-		
+
 		/**
-		 * The time (in seconds)
-		 */		
-		 
+   * The time (in seconds)
+   */
+
 		minimumDigits: 0,
-		
+
 		/**
-		 * The time (in seconds)
-		 */		
-		 
+   * The time (in seconds)
+   */
+
 		time: 0,
-		
+
 		/**
-		 * The parent FlipClock.Factory object
-		 */		
-		 
+   * The parent FlipClock.Factory object
+   */
+
 		factory: false,
-		
+
 		/**
-		 * Constructor
-		 *
-		 * @param  object  A FlipClock.Factory object
-		 * @param  int     An integer use to select the correct digit
-		 * @param  object  An object to override the default properties	 
-		 */
-		 
-		constructor: function(factory, time, options) {
+   * Constructor
+   *
+   * @param  object  A FlipClock.Factory object
+   * @param  int     An integer use to select the correct digit
+   * @param  object  An object to override the default properties	 
+   */
+
+		constructor: function (factory, time, options) {
 			this.base(options);
 			this.factory = factory;
 
-			if(time) {
+			if (time) {
 				this.time = time;
 			}
 		},
-		
+
 		/**
-		 * Convert a string or integer to an array of digits
-		 *
-		 * @param   mixed  String or Integer of digits	 
-		 * @return  array  An array of digits 
-		 */
-		 
-		convertDigitsToArray: function(str) {
+   * Convert a string or integer to an array of digits
+   *
+   * @param   mixed  String or Integer of digits	 
+   * @return  array  An array of digits 
+   */
+
+		convertDigitsToArray: function (str) {
 			var data = [];
-			
+
 			str = str.toString();
-			
-			for(var x = 0;x < str.length; x++) {
-				if(str[x].match(/^\d*$/g)) {
-					data.push(str[x]);	
+
+			for (var x = 0; x < str.length; x++) {
+				if (str[x].match(/^\d*$/g)) {
+					data.push(str[x]);
 				}
 			}
-			
+
 			return data;
 		},
-		
+
 		/**
-		 * Get a specific digit from the time integer
-		 *
-		 * @param   int    The specific digit to select from the time	 
-		 * @return  mixed  Returns FALSE if no digit is found, otherwise
-		 *				   the method returns the defined digit	 
-		 */
-		 
-		digit: function(i) {
+   * Get a specific digit from the time integer
+   *
+   * @param   int    The specific digit to select from the time	 
+   * @return  mixed  Returns FALSE if no digit is found, otherwise
+   *				   the method returns the defined digit	 
+   */
+
+		digit: function (i) {
 			var timeStr = this.toString();
-			var length  = timeStr.length;
-			
-			if(timeStr[length - i])	 {
+			var length = timeStr.length;
+
+			if (timeStr[length - i]) {
 				return timeStr[length - i];
 			}
-			
+
 			return false;
 		},
 
 		/**
-		 * Formats any array of digits into a valid array of digits
-		 *
-		 * @param   mixed  An array of digits	 
-		 * @return  array  An array of digits 
-		 */
-		 
-		digitize: function(obj) {
+   * Formats any array of digits into a valid array of digits
+   *
+   * @param   mixed  An array of digits	 
+   * @return  array  An array of digits 
+   */
+
+		digitize: function (obj) {
 			var data = [];
-			
-			$.each(obj, function(i, value) {
+
+			$.each(obj, function (i, value) {
 				value = value.toString();
-				
-				if(value.length == 1) {
-					value = '0'+value;
+
+				if (value.length == 1) {
+					value = '0' + value;
 				}
-				
-				for(var x = 0; x < value.length; x++) {
+
+				for (var x = 0; x < value.length; x++) {
 					data.push(value[x]);
-				}				
+				}
 			});
-			
-			if(data.length > this.minimumDigits) {
+
+			if (data.length > this.minimumDigits) {
 				this.minimumDigits = data.length;
 			}
-			
-			if(this.minimumDigits > data.length) {
+
+			if (this.minimumDigits > data.length) {
 				data.unshift('0');
 			}
-			
+
 			return data;
 		},
-		
+
 		/**
-		 * Gets a daily breakdown
-		 *
-		 * @return  object  Returns a digitized object
-		 */
+   * Gets a daily breakdown
+   *
+   * @return  object  Returns a digitized object
+   */
 
-		getDayCounter: function(includeSeconds) {
-			var digits = [
-				this.getDays(),
-				this.getHours(true),
-				this.getMinutes(true)
-			];
+		getDayCounter: function (includeSeconds) {
+			var digits = [this.getDays(), this.getHours(true), this.getMinutes(true)];
 
-			if(includeSeconds) {
+			if (includeSeconds) {
 				digits.push(this.getSeconds(true));
 			}
 
@@ -1116,230 +3662,213 @@ var FlipClock;
 		},
 
 		/**
-		 * Gets number of days
-		 *
-		 * @param   bool  Should perform a modulus? If not sent, then no.
-		 * @return  int   Retuns a floored integer
-		 */
-		 
-		getDays: function(mod) {
+   * Gets number of days
+   *
+   * @param   bool  Should perform a modulus? If not sent, then no.
+   * @return  int   Retuns a floored integer
+   */
+
+		getDays: function (mod) {
 			var days = this.time / 60 / 60 / 24;
-			
-			if(mod) {
+
+			if (mod) {
 				days = days % 7;
 			}
-			
+
 			return Math.floor(days);
 		},
-		
+
 		/**
-		 * Gets an hourly breakdown
-		 *
-		 * @return  object  Returns a digitized object
-		 */
-		 
-		getHourCounter: function() {
-			var obj = this.digitize([
-				this.getHours(),
-				this.getMinutes(true),
-				this.getSeconds(true)
-			]);
-			
+   * Gets an hourly breakdown
+   *
+   * @return  object  Returns a digitized object
+   */
+
+		getHourCounter: function () {
+			var obj = this.digitize([this.getHours(), this.getMinutes(true), this.getSeconds(true)]);
+
 			return obj;
 		},
-		
+
 		/**
-		 * Gets an hourly breakdown
-		 *
-		 * @return  object  Returns a digitized object
-		 */
-		 
-		getHourly: function() {
+   * Gets an hourly breakdown
+   *
+   * @return  object  Returns a digitized object
+   */
+
+		getHourly: function () {
 			return this.getHourCounter();
 		},
-		
+
 		/**
-		 * Gets number of hours
-		 *
-		 * @param   bool  Should perform a modulus? If not sent, then no.
-		 * @return  int   Retuns a floored integer
-		 */
-		 
-		getHours: function(mod) {
+   * Gets number of hours
+   *
+   * @param   bool  Should perform a modulus? If not sent, then no.
+   * @return  int   Retuns a floored integer
+   */
+
+		getHours: function (mod) {
 			var hours = this.time / 60 / 60;
-			
-			if(mod) {
-				hours = hours % 24;	
+
+			if (mod) {
+				hours = hours % 24;
 			}
-			
+
 			return Math.floor(hours);
 		},
-		
+
 		/**
-		 * Gets the twenty-four hour time
-		 *
-		 * @return  object  returns a digitized object
-		 */
-		 
-		getMilitaryTime: function() {
-			var date = new Date(); 
-			var obj  = this.digitize([
-				date.getHours(),
-				date.getMinutes(),
-				date.getSeconds()				
-			]);
+   * Gets the twenty-four hour time
+   *
+   * @return  object  returns a digitized object
+   */
+
+		getMilitaryTime: function () {
+			var date = new Date();
+			var obj = this.digitize([date.getHours(), date.getMinutes(), date.getSeconds()]);
 
 			return obj;
 		},
-				
+
 		/**
-		 * Gets number of minutes
-		 *
-		 * @param   bool  Should perform a modulus? If not sent, then no.
-		 * @return  int   Retuns a floored integer
-		 */
-		 
-		getMinutes: function(mod) {
+   * Gets number of minutes
+   *
+   * @param   bool  Should perform a modulus? If not sent, then no.
+   * @return  int   Retuns a floored integer
+   */
+
+		getMinutes: function (mod) {
 			var minutes = this.time / 60;
-			
-			if(mod) {
+
+			if (mod) {
 				minutes = minutes % 60;
 			}
-			
+
 			return Math.floor(minutes);
 		},
-		
+
 		/**
-		 * Gets a minute breakdown
-		 */
-		 
-		getMinuteCounter: function() {
-			var obj = this.digitize([
-				this.getMinutes(),
-				this.getSeconds(true)
-			]);
+   * Gets a minute breakdown
+   */
+
+		getMinuteCounter: function () {
+			var obj = this.digitize([this.getMinutes(), this.getSeconds(true)]);
 
 			return obj;
 		},
-		
+
 		/**
-		 * Gets number of seconds
-		 *
-		 * @param   bool  Should perform a modulus? If not sent, then no.
-		 * @return  int   Retuns a ceiled integer
-		 */
-		 
-		getSeconds: function(mod) {
+   * Gets number of seconds
+   *
+   * @param   bool  Should perform a modulus? If not sent, then no.
+   * @return  int   Retuns a ceiled integer
+   */
+
+		getSeconds: function (mod) {
 			var seconds = this.time;
-			
-			if(mod) {
-				if(seconds == 60) {
+
+			if (mod) {
+				if (seconds == 60) {
 					seconds = 0;
-				}
-				else {
+				} else {
 					seconds = seconds % 60;
 				}
 			}
-			
+
 			return Math.ceil(seconds);
 		},
-		
+
 		/**
-		 * Gets the current twelve hour time
-		 *
-		 * @return  object  Returns a digitized object
-		 */
-		 
-		getTime: function() {
-			var date  = new Date(); 
+   * Gets the current twelve hour time
+   *
+   * @return  object  Returns a digitized object
+   */
+
+		getTime: function () {
+			var date = new Date();
 			var hours = date.getHours();
 			var merid = hours > 12 ? 'PM' : 'AM';
-			var obj   = this.digitize([
-				hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours),
-				date.getMinutes(),
-				date.getSeconds()				
-			]);
+			var obj = this.digitize([hours > 12 ? hours - 12 : hours === 0 ? 12 : hours, date.getMinutes(), date.getSeconds()]);
 
 			return obj;
 		},
-		
+
 		/**
-		 * Gets number of weeks
-		 *
-		 * @param   bool  Should perform a modulus? If not sent, then no.
-		 * @return  int   Retuns a floored integer
-		 */
-		 
-		getWeeks: function() {
+   * Gets number of weeks
+   *
+   * @param   bool  Should perform a modulus? If not sent, then no.
+   * @return  int   Retuns a floored integer
+   */
+
+		getWeeks: function () {
 			var weeks = this.time / 60 / 60 / 24 / 7;
-			
-			if(mod) {
+
+			if (mod) {
 				weeks = weeks % 52;
 			}
-			
+
 			return Math.floor(weeks);
 		},
-		
+
 		/**
-		 * Removes a specific number of leading zeros from the array.
-		 * This method prevents you from removing too many digits, even
-		 * if you try.
-		 *
-		 * @param   int    Total number of digits to remove 
-		 * @return  array  An array of digits 
-		 */
-		 
-		removeLeadingZeros: function(totalDigits, digits) {
-			var total    = 0;
+   * Removes a specific number of leading zeros from the array.
+   * This method prevents you from removing too many digits, even
+   * if you try.
+   *
+   * @param   int    Total number of digits to remove 
+   * @return  array  An array of digits 
+   */
+
+		removeLeadingZeros: function (totalDigits, digits) {
+			var total = 0;
 			var newArray = [];
-			
-			$.each(digits, function(i, digit) {
-				if(i < totalDigits) {
+
+			$.each(digits, function (i, digit) {
+				if (i < totalDigits) {
 					total += parseInt(digits[i], 10);
-				}
-				else {
+				} else {
 					newArray.push(digits[i]);
 				}
 			});
-			
-			if(total === 0) {
+
+			if (total === 0) {
 				return newArray;
 			}
-			
+
 			return digits;
 		},
-		
+
 		/**
-		 * Converts the object to a human readable string
-		 */
-		 
-		toString: function() {
+   * Converts the object to a human readable string
+   */
+
+		toString: function () {
 			return this.time.toString();
 		}
-		
+
 		/*
-		getYears: function() {
-			return Math.floor(this.time / 60 / 60 / 24 / 7 / 52);
-		},
-		
-		getDecades: function() {
-			return Math.floor(this.getWeeks() / 10);
-		}*/
+  getYears: function() {
+  	return Math.floor(this.time / 60 / 60 / 24 / 7 / 52);
+  },
+  
+  getDecades: function() {
+  	return Math.floor(this.getWeeks() / 10);
+  }*/
 	});
-	
+
 	/**
-	 * The FlipClock.Timer object managers the JS timers
-	 *
-	 * @param	object  The parent FlipClock.Factory object
-	 * @param	object  Override the default options
-	 */
-	
+  * The FlipClock.Timer object managers the JS timers
+  *
+  * @param	object  The parent FlipClock.Factory object
+  * @param	object  Override the default options
+  */
+
 	FlipClock.Timer = FlipClock.Base.extend({
-		
+
 		/**
-		 * Callbacks
-		 */		
-		 
+   * Callbacks
+   */
+
 		callbacks: {
 			destroy: false,
 			create: false,
@@ -1349,427 +3878,421 @@ var FlipClock;
 			stop: false,
 			reset: false
 		},
-		
+
 		/**
-		 * FlipClock timer count (how many intervals have passed)
-		 */		
-		 
+   * FlipClock timer count (how many intervals have passed)
+   */
+
 		count: 0,
-		
+
 		/**
-		 * The parent FlipClock.Factory object
-		 */		
-		 
+   * The parent FlipClock.Factory object
+   */
+
 		factory: false,
-		
+
 		/**
-		 * Timer interval (1 second by default)
-		 */		
-		 
+   * Timer interval (1 second by default)
+   */
+
 		interval: 1000,
-				
+
 		/**
-		 * Constructor
-		 *
-		 * @return	void
-		 */		
-		 
-		constructor: function(factory, options) {
+   * Constructor
+   *
+   * @return	void
+   */
+
+		constructor: function (factory, options) {
 			this.base(options);
 			this.factory = factory;
-			this.callback(this.callbacks.init);	
+			this.callback(this.callbacks.init);
 			this.callback(this.callbacks.create);
 		},
-		
+
 		/**
-		 * This method gets the elapsed the time as an interger
-		 *
-		 * @return	void
-		 */		
-		 
-		getElapsed: function() {
+   * This method gets the elapsed the time as an interger
+   *
+   * @return	void
+   */
+
+		getElapsed: function () {
 			return this.count * this.interval;
 		},
-		
+
 		/**
-		 * This method gets the elapsed the time as a Date object
-		 *
-		 * @return	void
-		 */		
-		 
-		getElapsedTime: function() {
+   * This method gets the elapsed the time as a Date object
+   *
+   * @return	void
+   */
+
+		getElapsedTime: function () {
 			return new Date(this.time + this.getElapsed());
 		},
-		
+
 		/**
-		 * This method is resets the timer
-		 *
-		 * @param 	callback  This method resets the timer back to 0
-		 * @return	void
-		 */		
-		 
-		reset: function(callback) {
+   * This method is resets the timer
+   *
+   * @param 	callback  This method resets the timer back to 0
+   * @return	void
+   */
+
+		reset: function (callback) {
 			clearInterval(this.timer);
 			this.count = 0;
-			this._setInterval(callback);			
+			this._setInterval(callback);
 			this.callback(this.callbacks.reset);
 		},
-		
+
 		/**
-		 * This method is starts the timer
-		 *
-		 * @param 	callback  A function that is called once the timer is destroyed
-		 * @return	void
-		 */		
-		 
-		start: function(callback) {		
+   * This method is starts the timer
+   *
+   * @param 	callback  A function that is called once the timer is destroyed
+   * @return	void
+   */
+
+		start: function (callback) {
 			this.factory.running = true;
 			this._createTimer(callback);
 			this.callback(this.callbacks.start);
 		},
-		
+
 		/**
-		 * This method is stops the timer
-		 *
-		 * @param 	callback  A function that is called once the timer is destroyed
-		 * @return	void
-		 */		
-		 
-		stop: function(callback) {
+   * This method is stops the timer
+   *
+   * @param 	callback  A function that is called once the timer is destroyed
+   * @return	void
+   */
+
+		stop: function (callback) {
 			this.factory.running = false;
 			this._clearInterval(callback);
 			this.callback(this.callbacks.stop);
 			this.callback(callback);
 		},
-		
+
 		/**
-		 * Clear the timer interval
-		 *
-		 * @return	void
-		 */		
-		 
-		_clearInterval: function() {
+   * Clear the timer interval
+   *
+   * @return	void
+   */
+
+		_clearInterval: function () {
 			clearInterval(this.timer);
 		},
-		
+
 		/**
-		 * Create the timer object
-		 *
-		 * @param 	callback  A function that is called once the timer is created
-		 * @return	void
-		 */		
-		 
-		_createTimer: function(callback) {
-			this._setInterval(callback);		
+   * Create the timer object
+   *
+   * @param 	callback  A function that is called once the timer is created
+   * @return	void
+   */
+
+		_createTimer: function (callback) {
+			this._setInterval(callback);
 		},
-		
+
 		/**
-		 * Destroy the timer object
-		 *
-		 * @param 	callback  A function that is called once the timer is destroyed
-		 * @return	void
-		 */		
-		 	
-		_destroyTimer: function(callback) {
-			this._clearInterval();			
+   * Destroy the timer object
+   *
+   * @param 	callback  A function that is called once the timer is destroyed
+   * @return	void
+   */
+
+		_destroyTimer: function (callback) {
+			this._clearInterval();
 			this.timer = false;
 			this.callback(callback);
 			this.callback(this.callbacks.destroy);
 		},
-		
+
 		/**
-		 * This method is called each time the timer interval is ran
-		 *
-		 * @param 	callback  A function that is called once the timer is destroyed
-		 * @return	void
-		 */		
-		 
-		_interval: function(callback) {
+   * This method is called each time the timer interval is ran
+   *
+   * @param 	callback  A function that is called once the timer is destroyed
+   * @return	void
+   */
+
+		_interval: function (callback) {
 			this.callback(this.callbacks.interval);
 			this.callback(callback);
 			this.count++;
 		},
-		
+
 		/**
-		 * This sets the timer interval
-		 *
-		 * @param 	callback  A function that is called once the timer is destroyed
-		 * @return	void
-		 */		
-		 
-		_setInterval: function(callback) {
+   * This sets the timer interval
+   *
+   * @param 	callback  A function that is called once the timer is destroyed
+   * @return	void
+   */
+
+		_setInterval: function (callback) {
 			var t = this;
-			
-			t.timer = setInterval(function() {			
+
+			t.timer = setInterval(function () {
 				t._interval(callback);
 			}, this.interval);
 		}
-			
+
 	});
-	
+
 	/**
-	 * Capitalize the first letter in a string
-	 *
-	 * @return string
-	 */
-	 
-	String.prototype.ucfirst = function() {
+  * Capitalize the first letter in a string
+  *
+  * @return string
+  */
+
+	String.prototype.ucfirst = function () {
 		return this.substr(0, 1).toUpperCase() + this.substr(1);
 	};
-	
+
 	/**
-	 * jQuery helper method
-	 *
-	 * @param  int     An integer used to start the clock (no. seconds)
-	 * @param  object  An object of properties to override the default	
-	 */
-	 
-	$.fn.FlipClock = function(digit, options) {
-		if(typeof digit == "object") {
+  * jQuery helper method
+  *
+  * @param  int     An integer used to start the clock (no. seconds)
+  * @param  object  An object of properties to override the default	
+  */
+
+	$.fn.FlipClock = function (digit, options) {
+		if (typeof digit == "object") {
 			options = digit;
 			digit = 0;
-		}		
+		}
 		return new FlipClock($(this), digit, options);
 	};
-	
+
 	/**
-	 * jQuery helper method
-	 *
-	 * @param  int     An integer used to start the clock (no. seconds)
-	 * @param  object  An object of properties to override the default	
-	 */
-	 
-	$.fn.flipClock = function(digit, options) {
+  * jQuery helper method
+  *
+  * @param  int     An integer used to start the clock (no. seconds)
+  * @param  object  An object of properties to override the default	
+  */
+
+	$.fn.flipClock = function (digit, options) {
 		return $.fn.FlipClock(digit, options);
 	};
-	
-}(jQuery));
+})(jQuery);
 
-(function($) {
-	
+(function ($) {
+
 	/**
-	 * Twenty-Four Hour Clock Face
-	 *
-	 * This class will generate a twenty-four our clock for FlipClock.js
-	 *
-	 * @param  object  The parent FlipClock.Factory object
-	 * @param  object  An object of properties to override the default	
-	 */
-	 
+  * Twenty-Four Hour Clock Face
+  *
+  * This class will generate a twenty-four our clock for FlipClock.js
+  *
+  * @param  object  The parent FlipClock.Factory object
+  * @param  object  An object of properties to override the default	
+  */
+
 	FlipClock.TwentyFourHourClockFace = FlipClock.Face.extend({
 
 		/**
-		 * Constructor
-		 *
-		 * @param  object  The parent FlipClock.Factory object
-		 * @param  object  An object of properties to override the default	
-		 */
-		 
-		constructor: function(factory, options) {
+   * Constructor
+   *
+   * @param  object  The parent FlipClock.Factory object
+   * @param  object  An object of properties to override the default	
+   */
+
+		constructor: function (factory, options) {
 			factory.countdown = false;
 			this.base(factory, options);
 		},
 
 		/**
-		 * Build the clock face
-		 *
-		 * @param  object  Pass the time that should be used to display on the clock.	
-		 */
-		 
-		build: function(time) {
-			var t        = this;
+   * Build the clock face
+   *
+   * @param  object  Pass the time that should be used to display on the clock.	
+   */
+
+		build: function (time) {
+			var t = this;
 			var children = this.factory.$wrapper.find('ul');
 
-			time = time ? time : (this.factory.time.time || this.factory.time.getMilitaryTime());
-			
-			if(time.length > children.length) {
-				$.each(time, function(i, digit) {
+			time = time ? time : this.factory.time.time || this.factory.time.getMilitaryTime();
+
+			if (time.length > children.length) {
+				$.each(time, function (i, digit) {
 					t.factory.lists.push(t.createList(digit));
 				});
 			}
-			
+
 			this.dividers.push(this.createDivider());
 			this.dividers.push(this.createDivider());
-			
+
 			$(this.dividers[0]).insertBefore(this.factory.lists[this.factory.lists.length - 2].$obj);
 			$(this.dividers[1]).insertBefore(this.factory.lists[this.factory.lists.length - 4].$obj);
-			
+
 			this._clearExcessDigits();
-			
-			if(this.autoStart) {
+
+			if (this.autoStart) {
 				this.start();
 			}
 		},
-		
+
 		/**
-		 * Flip the clock face
-		 */
-		 
-		flip: function(time) {
+   * Flip the clock face
+   */
+
+		flip: function (time) {
 			time = time ? time : this.factory.time.getMilitaryTime();
-			this.base(time);	
+			this.base(time);
 		},
-		
+
 		/**
-		 * Clear the excess digits from the tens columns for sec/min
-		 */
-		 
-		_clearExcessDigits: function() {
+   * Clear the excess digits from the tens columns for sec/min
+   */
+
+		_clearExcessDigits: function () {
 			var tenSeconds = this.factory.lists[this.factory.lists.length - 2];
 			var tenMinutes = this.factory.lists[this.factory.lists.length - 4];
-			
-			for(var x = 6; x < 10; x++) {
+
+			for (var x = 6; x < 10; x++) {
 				tenSeconds.$obj.find('li:last-child').remove();
 				tenMinutes.$obj.find('li:last-child').remove();
 			}
 		}
-				
+
 	});
-	
-}(jQuery));
-(function($) {
-		
+})(jQuery);
+(function ($) {
+
 	/**
-	 * Counter Clock Face
-	 *
-	 * This class will generate a generice flip counter. The timer has been
-	 * disabled. clock.increment() and clock.decrement() have been added.
-	 *
-	 * @param  object  The parent FlipClock.Factory object
-	 * @param  object  An object of properties to override the default	
-	 */
-	 
+  * Counter Clock Face
+  *
+  * This class will generate a generice flip counter. The timer has been
+  * disabled. clock.increment() and clock.decrement() have been added.
+  *
+  * @param  object  The parent FlipClock.Factory object
+  * @param  object  An object of properties to override the default	
+  */
+
 	FlipClock.CounterFace = FlipClock.Face.extend({
-		
+
 		autoStart: false,
 
 		/**
-		 * Constructor
-		 *
-		 * @param  object  The parent FlipClock.Factory object
-		 * @param  object  An object of properties to override the default	
-		 */
-		 
-		constructor: function(factory, options) {
-			factory.timer.interval = 0;
-			factory.autoStart 	   = false;
-			factory.running  	   = true;
+   * Constructor
+   *
+   * @param  object  The parent FlipClock.Factory object
+   * @param  object  An object of properties to override the default	
+   */
 
-			factory.increment = function() {
+		constructor: function (factory, options) {
+			factory.timer.interval = 0;
+			factory.autoStart = false;
+			factory.running = true;
+
+			factory.increment = function () {
 				factory.countdown = false;
 				factory.setTime(factory.getTime().time + 1);
 			};
 
-			factory.decrement = function() {
+			factory.decrement = function () {
 				factory.countdown = true;
 				factory.setTime(factory.getTime().time - 1);
 			};
 
-			factory.setValue = function(digits) {
+			factory.setValue = function (digits) {
 				factory.setTime(digits);
 			};
 
-			factory.setCounter = function(digits) {
+			factory.setCounter = function (digits) {
 				factory.setTime(digits);
 			};
 
 			this.base(factory, options);
 		},
-		
-		/**
-		 * Build the clock face	
-		 */
-		 
-		build: function() {
-			var t        = this;
-			var children = this.factory.$wrapper.find('ul');
-			var lists    = [];
-			var time 	 = this.factory.getTime().digitize([this.factory.getTime().time]);
 
-			if(time.length > children.length) {
-				$.each(time, function(i, digit) {
+		/**
+   * Build the clock face	
+   */
+
+		build: function () {
+			var t = this;
+			var children = this.factory.$wrapper.find('ul');
+			var lists = [];
+			var time = this.factory.getTime().digitize([this.factory.getTime().time]);
+
+			if (time.length > children.length) {
+				$.each(time, function (i, digit) {
 					var list = t.createList(digit);
 
 					list.select(digit);
 					lists.push(list);
 				});
-			
 			}
 
-			$.each(lists, function(i, list) {
+			$.each(lists, function (i, list) {
 				list.play();
 			});
 
 			this.factory.lists = lists;
 		},
-		
+
 		/**
-		 * Flip the clock face
-		 */
-		 
-		flip: function(doNotAddPlayClass) {
+   * Flip the clock face
+   */
+
+		flip: function (doNotAddPlayClass) {
 			var time = this.factory.getTime().digitize([this.factory.getTime().time]);
 
 			this.base(time, doNotAddPlayClass);
-		},
+		}
 
 	});
-	
-}(jQuery));
-(function($) {
+})(jQuery);
+(function ($) {
 
 	/**
-	 * Daily Counter Clock Face
-	 *
-	 * This class will generate a daily counter for FlipClock.js. A
-	 * daily counter will track days, hours, minutes, and seconds. If
-	 * the number of available digits is exceeded in the count, a new
-	 * digit will be created.
-	 *
-	 * @param  object  The parent FlipClock.Factory object
-	 * @param  object  An object of properties to override the default
-	 */
+  * Daily Counter Clock Face
+  *
+  * This class will generate a daily counter for FlipClock.js. A
+  * daily counter will track days, hours, minutes, and seconds. If
+  * the number of available digits is exceeded in the count, a new
+  * digit will be created.
+  *
+  * @param  object  The parent FlipClock.Factory object
+  * @param  object  An object of properties to override the default
+  */
 
 	FlipClock.DailyCounterFace = FlipClock.Face.extend({
 
 		showSeconds: true,
 
 		/**
-		 * Constructor
-		 *
-		 * @param  object  The parent FlipClock.Factory object
-		 * @param  object  An object of properties to override the default
-		 */
+   * Constructor
+   *
+   * @param  object  The parent FlipClock.Factory object
+   * @param  object  An object of properties to override the default
+   */
 
-		constructor: function(factory, options) {
+		constructor: function (factory, options) {
 			this.base(factory, options);
 		},
 
 		/**
-		 * Build the clock face
-		 */
+   * Build the clock face
+   */
 
-		build: function(excludeHours, time) {
-			var t        = this;
+		build: function (excludeHours, time) {
+			var t = this;
 			var children = this.factory.$wrapper.find('ul');
-			var lists    = [];
-			var offset   = 0;
+			var lists = [];
+			var offset = 0;
 
-			time     = time ? time : this.factory.time.getDayCounter(this.showSeconds);
+			time = time ? time : this.factory.time.getDayCounter(this.showSeconds);
 
-			if(time.length > children.length) {
-				$.each(time, function(i, digit) {
+			if (time.length > children.length) {
+				$.each(time, function (i, digit) {
 					lists.push(t.createList(digit));
 				});
 			}
 
 			this.factory.lists = lists;
 
-			if(this.showSeconds) {
+			if (this.showSeconds) {
 				$(this.createDivider('Seconds')).insertBefore(this.factory.lists[this.factory.lists.length - 2].$obj);
-			}
-			else
-			{
+			} else {
 				offset = 2;
 			}
 
@@ -1779,381 +4302,478 @@ var FlipClock;
 
 			this._clearExcessDigits();
 
-			if(this.autoStart) {
+			if (this.autoStart) {
 				this.start();
 			}
 		},
 
 		/**
-		 * Flip the clock face
-		 */
+   * Flip the clock face
+   */
 
-		flip: function(doNotAddPlayClass, time) {
-			if(!time) {
+		flip: function (doNotAddPlayClass, time) {
+			if (!time) {
 				time = this.factory.time.getDayCounter(this.showSeconds);
 			}
 			this.base(time, doNotAddPlayClass);
 		},
 
 		/**
-		 * Clear the excess digits from the tens columns for sec/min
-		 */
+   * Clear the excess digits from the tens columns for sec/min
+   */
 
-		_clearExcessDigits: function() {
+		_clearExcessDigits: function () {
 			var tenSeconds = this.factory.lists[this.factory.lists.length - 2];
 			var tenMinutes = this.factory.lists[this.factory.lists.length - 4];
 
-			for(var x = 6; x < 10; x++) {
+			for (var x = 6; x < 10; x++) {
 				tenSeconds.$obj.find('li:last-child').remove();
 				tenMinutes.$obj.find('li:last-child').remove();
 			}
 		}
 
 	});
+})(jQuery);
+(function ($) {
 
-}(jQuery));
-(function($) {
-			
 	/**
-	 * Hourly Counter Clock Face
-	 *
-	 * This class will generate an hourly counter for FlipClock.js. An
-	 * hour counter will track hours, minutes, and seconds. If number of
-	 * available digits is exceeded in the count, a new digit will be 
-	 * created.
-	 *
-	 * @param  object  The parent FlipClock.Factory object
-	 * @param  object  An object of properties to override the default	
-	 */
-	 
+  * Hourly Counter Clock Face
+  *
+  * This class will generate an hourly counter for FlipClock.js. An
+  * hour counter will track hours, minutes, and seconds. If number of
+  * available digits is exceeded in the count, a new digit will be 
+  * created.
+  *
+  * @param  object  The parent FlipClock.Factory object
+  * @param  object  An object of properties to override the default	
+  */
+
 	FlipClock.HourlyCounterFace = FlipClock.Face.extend({
-			
+
 		clearExcessDigits: true,
 
 		/**
-		 * Constructor
-		 *
-		 * @param  object  The parent FlipClock.Factory object
-		 * @param  object  An object of properties to override the default	
-		 */
-		 
-		constructor: function(factory, options) {
+   * Constructor
+   *
+   * @param  object  The parent FlipClock.Factory object
+   * @param  object  An object of properties to override the default	
+   */
+
+		constructor: function (factory, options) {
 			this.base(factory, options);
 		},
-		
+
 		/**
-		 * Build the clock face
-		 */
-		
-		build: function(excludeHours, time) {
-			var t        = this;
+   * Build the clock face
+   */
+
+		build: function (excludeHours, time) {
+			var t = this;
 			var children = this.factory.$wrapper.find('ul');
 			var lists = [];
-			
-			time     = time ? time : this.factory.time.getHourCounter();
-			
-			if(time.length > children.length) {
-				$.each(time, function(i, digit) {
+
+			time = time ? time : this.factory.time.getHourCounter();
+
+			if (time.length > children.length) {
+				$.each(time, function (i, digit) {
 					lists.push(t.createList(digit));
 				});
 			}
-			
-			this.factory.lists = lists;	
-			
+
+			this.factory.lists = lists;
+
 			$(this.createDivider('Seconds')).insertBefore(this.factory.lists[this.factory.lists.length - 2].$obj);
 			$(this.createDivider('Minutes')).insertBefore(this.factory.lists[this.factory.lists.length - 4].$obj);
-			
-			if(!excludeHours) {
+
+			if (!excludeHours) {
 				$(this.createDivider('Hours', true)).insertBefore(this.factory.lists[0].$obj);
 			}
-			
-			if(this.clearExcessDigits) {
+
+			if (this.clearExcessDigits) {
 				this._clearExcessDigits();
 			}
-			
-			if(this.autoStart) {
+
+			if (this.autoStart) {
 				this.start();
 			}
 		},
-		
+
 		/**
-		 * Flip the clock face
-		 */
-		 
-		flip: function(doNotAddPlayClass, time) {
-			if(!time) {
+   * Flip the clock face
+   */
+
+		flip: function (doNotAddPlayClass, time) {
+			if (!time) {
 				time = this.factory.time.getHourCounter();
-			}			
+			}
 			this.base(time, doNotAddPlayClass);
 		},
-		
+
 		/**
-		 * Clear the excess digits from the tens columns for sec/min
-		 */
-		 
-		_clearExcessDigits: function() {
+   * Clear the excess digits from the tens columns for sec/min
+   */
+
+		_clearExcessDigits: function () {
 			var tenSeconds = this.factory.lists[this.factory.lists.length - 2];
 			var tenMinutes = this.factory.lists[this.factory.lists.length - 4];
-			
-			for(var x = 6; x < 10; x++) {
+
+			for (var x = 6; x < 10; x++) {
 				tenSeconds.$obj.find('li:last-child').remove();
 				tenMinutes.$obj.find('li:last-child').remove();
 			}
 		}
-		
+
 	});
-	
-}(jQuery));
-(function($) {
-		
+})(jQuery);
+(function ($) {
+
 	/**
-	 * Minute Counter Clock Face
-	 *
-	 * This class will generate a minute counter for FlipClock.js. A
-	 * minute counter will track minutes and seconds. If an hour is 
-	 * reached, the counter will reset back to 0. (4 digits max)
-	 *
-	 * @param  object  The parent FlipClock.Factory object
-	 * @param  object  An object of properties to override the default	
-	 */
-	 
+  * Minute Counter Clock Face
+  *
+  * This class will generate a minute counter for FlipClock.js. A
+  * minute counter will track minutes and seconds. If an hour is 
+  * reached, the counter will reset back to 0. (4 digits max)
+  *
+  * @param  object  The parent FlipClock.Factory object
+  * @param  object  An object of properties to override the default	
+  */
+
 	FlipClock.MinuteCounterFace = FlipClock.HourlyCounterFace.extend({
-		
+
 		clearExcessDigits: false,
 
 		/**
-		 * Constructor
-		 *
-		 * @param  object  The parent FlipClock.Factory object
-		 * @param  object  An object of properties to override the default	
-		 */
-		 
-		constructor: function(factory, options) {
+   * Constructor
+   *
+   * @param  object  The parent FlipClock.Factory object
+   * @param  object  An object of properties to override the default	
+   */
+
+		constructor: function (factory, options) {
 			this.base(factory, options);
 		},
-		
+
 		/**
-		 * Build the clock face	
-		 */
-		 
-		build: function() {
+   * Build the clock face	
+   */
+
+		build: function () {
 			this.base(true, this.factory.time.getMinuteCounter());
 		},
-		
+
 		/**
-		 * Flip the clock face
-		 */
-		 
-		flip: function(doNotAddPlayClass) {
+   * Flip the clock face
+   */
+
+		flip: function (doNotAddPlayClass) {
 			this.base(doNotAddPlayClass, this.factory.time.getMinuteCounter());
-		},
+		}
 
 	});
-	
-}(jQuery));
-(function($) {
-		
+})(jQuery);
+(function ($) {
+
 	/**
-	 * Twelve Hour Clock Face
-	 *
-	 * This class will generate a twelve hour clock for FlipClock.js
-	 *
-	 * @param  object  The parent FlipClock.Factory object
-	 * @param  object  An object of properties to override the default	
-	 */
-	 
+  * Twelve Hour Clock Face
+  *
+  * This class will generate a twelve hour clock for FlipClock.js
+  *
+  * @param  object  The parent FlipClock.Factory object
+  * @param  object  An object of properties to override the default	
+  */
+
 	FlipClock.TwelveHourClockFace = FlipClock.TwentyFourHourClockFace.extend({
-		
+
 		/**
-		 * The meridium jQuery DOM object
-		 */
-		 
+   * The meridium jQuery DOM object
+   */
+
 		meridium: false,
-		
+
 		/**
-		 * The meridium text as string for easy access
-		 */
-		 
+   * The meridium text as string for easy access
+   */
+
 		meridiumText: 'AM',
-					
+
 		/**
-		 * Build the clock face
-		 *
-		 * @param  object  Pass the time that should be used to display on the clock.	
-		 */
-		 
-		build: function(time) {
-			var t        = this;
-			
-			time = time ? time : (this.factory.time.time ? this.factory.time.time : this.factory.time.getTime());
-			
-			this.base(time);			
-			this.meridiumText = this._isPM() ? 'PM' : 'AM';			
-			this.meridium = $([
-				'<ul class="flip-clock-meridium">',
-					'<li>',
-						'<a href="#">'+this.meridiumText+'</a>',
-					'</li>',
-				'</ul>'
-			].join(''));
-			
-			this.meridium.insertAfter(this.factory.lists[this.factory.lists.length-1].$obj);
+   * Build the clock face
+   *
+   * @param  object  Pass the time that should be used to display on the clock.	
+   */
+
+		build: function (time) {
+			var t = this;
+
+			time = time ? time : this.factory.time.time ? this.factory.time.time : this.factory.time.getTime();
+
+			this.base(time);
+			this.meridiumText = this._isPM() ? 'PM' : 'AM';
+			this.meridium = $(['<ul class="flip-clock-meridium">', '<li>', '<a href="#">' + this.meridiumText + '</a>', '</li>', '</ul>'].join(''));
+
+			this.meridium.insertAfter(this.factory.lists[this.factory.lists.length - 1].$obj);
 		},
-		
+
 		/**
-		 * Flip the clock face
-		 */
-		 
-		flip: function() {			
-			if(this.meridiumText != this._getMeridium()) {
+   * Flip the clock face
+   */
+
+		flip: function () {
+			if (this.meridiumText != this._getMeridium()) {
 				this.meridiumText = this._getMeridium();
-				this.meridium.find('a').html(this.meridiumText);	
+				this.meridium.find('a').html(this.meridiumText);
 			}
-			this.base(this.factory.time.getTime());	
+			this.base(this.factory.time.getTime());
 		},
-		
+
 		/**
-		 * Get the current meridium
-		 *
-		 * @return  string  Returns the meridium (AM|PM)
-		 */
-		 
-		_getMeridium: function() {
+   * Get the current meridium
+   *
+   * @return  string  Returns the meridium (AM|PM)
+   */
+
+		_getMeridium: function () {
 			return new Date().getHours() >= 12 ? 'PM' : 'AM';
 		},
-		
+
 		/**
-		 * Is it currently in the post-medirium?
-		 *
-		 * @return  bool  Returns true or false
-		 */
-		 
-		_isPM: function() {
+   * Is it currently in the post-medirium?
+   *
+   * @return  bool  Returns true or false
+   */
+
+		_isPM: function () {
 			return this._getMeridium() == 'PM' ? true : false;
 		},
-		
+
 		/**
-		 * Clear the excess digits from the tens columns for sec/min
-		 */
-		 
-		_clearExcessDigits: function() {
+   * Clear the excess digits from the tens columns for sec/min
+   */
+
+		_clearExcessDigits: function () {
 			var tenSeconds = this.factory.lists[this.factory.lists.length - 2];
 			var tenMinutes = this.factory.lists[this.factory.lists.length - 4];
-			
-			for(var x = 6; x < 10; x++) {
+
+			for (var x = 6; x < 10; x++) {
 				tenSeconds.$obj.find('li:last-child').remove();
 				tenMinutes.$obj.find('li:last-child').remove();
 			}
 		}
-				
+
 	});
-	
-}(jQuery));
-(function($) {
-		
+})(jQuery);
+(function ($) {
+
 	/**
-	 * FlipClock German Language Pack
-	 *
-	 * This class will used to translate tokens into the German language.
-	 *	
-	 */
-	 
+  * FlipClock German Language Pack
+  *
+  * This class will used to translate tokens into the German language.
+  *	
+  */
+
 	FlipClock.Lang.German = {
-		
-		'years'   : 'Jahre',
-		'months'  : 'Monate',
-		'days'    : 'Tage',
-		'hours'   : 'Stunden',
-		'minutes' : 'Minuten',
-		'seconds' : 'Sekunden'	
- 
+
+		'years': 'Jahre',
+		'months': 'Monate',
+		'days': 'Tage',
+		'hours': 'Stunden',
+		'minutes': 'Minuten',
+		'seconds': 'Sekunden'
+
 	};
-	
+
 	/* Create various aliases for convenience */
- 
-	FlipClock.Lang['de']     = FlipClock.Lang.German;
-	FlipClock.Lang['de-de']  = FlipClock.Lang.German;
+
+	FlipClock.Lang['de'] = FlipClock.Lang.German;
+	FlipClock.Lang['de-de'] = FlipClock.Lang.German;
 	FlipClock.Lang['german'] = FlipClock.Lang.German;
- 
-}(jQuery));
-(function($) {
-		
+})(jQuery);
+(function ($) {
+
 	/**
-	 * FlipClock English Language Pack
-	 *
-	 * This class will used to translate tokens into the English language.
-	 *	
-	 */
-	 
+  * FlipClock English Language Pack
+  *
+  * This class will used to translate tokens into the English language.
+  *	
+  */
+
 	FlipClock.Lang.English = {
-		
-		'years'   : 'Years',
-		'months'  : 'Months',
-		'days'    : 'Days',
-		'hours'   : 'Hours',
-		'minutes' : 'Minutes',
-		'seconds' : 'Seconds'	
+
+		'years': 'Years',
+		'months': 'Months',
+		'days': 'Days',
+		'hours': 'Hours',
+		'minutes': 'Minutes',
+		'seconds': 'Seconds'
 
 	};
-	
+
 	/* Create various aliases for convenience */
 
-	FlipClock.Lang['en']      = FlipClock.Lang.English;
-	FlipClock.Lang['en-us']   = FlipClock.Lang.English;
+	FlipClock.Lang['en'] = FlipClock.Lang.English;
+	FlipClock.Lang['en-us'] = FlipClock.Lang.English;
 	FlipClock.Lang['english'] = FlipClock.Lang.English;
+})(jQuery);
+(function ($) {
 
-}(jQuery));
-(function($) {
-		
 	/**
-	 * FlipClock Spanish Language Pack
-	 *
-	 * This class will used to translate tokens into the Spanish language.
-	 *	
-	 */
-	 
+  * FlipClock Spanish Language Pack
+  *
+  * This class will used to translate tokens into the Spanish language.
+  *	
+  */
+
 	FlipClock.Lang.Spanish = {
-		
-		'years'   : 'A&#241;os',
-		'months'  : 'Meses',
-		'days'    : 'D&#205;as',
-		'hours'   : 'Horas',
-		'minutes' : 'Minutos',
-		'seconds' : 'Segundo'	
+
+		'years': 'A&#241;os',
+		'months': 'Meses',
+		'days': 'D&#205;as',
+		'hours': 'Horas',
+		'minutes': 'Minutos',
+		'seconds': 'Segundo'
 
 	};
-	
+
 	/* Create various aliases for convenience */
 
-	FlipClock.Lang['es']      = FlipClock.Lang.Spanish;
-	FlipClock.Lang['es-es']   = FlipClock.Lang.Spanish;
+	FlipClock.Lang['es'] = FlipClock.Lang.Spanish;
+	FlipClock.Lang['es-es'] = FlipClock.Lang.Spanish;
 	FlipClock.Lang['spanish'] = FlipClock.Lang.Spanish;
+})(jQuery);
+(function ($) {
 
-}(jQuery));
-(function($) {
+	/**
+  * FlipClock Canadian French Language Pack
+  *
+  * This class will used to translate tokens into the Canadian French language.
+  *
+  */
 
-  /**
-   * FlipClock Canadian French Language Pack
-   *
-   * This class will used to translate tokens into the Canadian French language.
-   *
-   */
+	FlipClock.Lang.French = {
 
-  FlipClock.Lang.French = {
+		'years': 'ans',
+		'months': 'mois',
+		'days': 'jours',
+		'hours': 'heures',
+		'minutes': 'minutes',
+		'seconds': 'secondes'
 
-    'years'   : 'ans',
-    'months'  : 'mois',
-    'days'    : 'jours',
-    'hours'   : 'heures',
-    'minutes' : 'minutes',
-    'seconds' : 'secondes'
+	};
 
-  };
+	/* Create various aliases for convenience */
 
-  /* Create various aliases for convenience */
+	FlipClock.Lang['fr'] = FlipClock.Lang.French;
+	FlipClock.Lang['fr-ca'] = FlipClock.Lang.French;
+	FlipClock.Lang['french'] = FlipClock.Lang.French;
+})(jQuery);
 
-  FlipClock.Lang['fr']      = FlipClock.Lang.French;
-  FlipClock.Lang['fr-ca']   = FlipClock.Lang.French;
-  FlipClock.Lang['french']  = FlipClock.Lang.French;
+},{}],22:[function(require,module,exports){
+var yo = require('yo-yo');
 
-}(jQuery));
+module.exports = function landing(box) {
+  return yo`<div class="container">
+        <div class="row">
+          <div class="col s10 push-s1">
+            <div class="row">
+              <div class="col m5 hide-on-small-only">
+                <img class="iphone" src="iPhone6.png" alt="">
+              </div>
+              ${ box }
+            </div>
+          </div>
+        </div>
+      </div>`;
+};
+
+},{"yo-yo":8}],23:[function(require,module,exports){
+var page = require('page');
+var empty = require('empty-element');
+var template = require('./template');
+var title = require('title');
+
+page('/signin', function (ctx, next) {
+  title('vego-signin');
+  var main = document.getElementById('main-container');
+  empty(main).appendChild(template);
+});
+
+},{"./template":24,"empty-element":3,"page":4,"title":7}],24:[function(require,module,exports){
+
+var yo = require('yo-yo');
+var landing = require('../landing');
+
+var signinForm = yo`<div class="col s12 m7">
+                        <div class="row">
+                          <div class="signup-box">
+                            <h1 class="vego">Vego</h1>
+                            <form action="" class="signup-form">
+                              <div class="section">
+                                <a href="" class="btn btn-fb hide-on-small-only">iniciar con facebook</a>
+                                <a href="" class="btn btn-fb hide-on-med-and-up"><i class="fa fa-facebook-official" aria-hidden="true"></i>iniciar sesion</a>    
+                              </div>
+                              <div class="divider"></div>
+                              <div class="section">
+                                <input type="text" name="username" placeholder="nombre de usuario"/>
+                                <input type="password" name="password" placeholder="password"/>
+                                <button class="btn waves-effect waves-light btn-signup" type="submit">Inicia</button>
+                              </div>
+                            </form>
+                          </div>  
+                        </div>
+                        <div class="row">
+                          <div class="login-box">
+                            No tienes una cuenta ? <a href="/signup">Registrate</a>
+                          </div>
+                        </div>
+                      </div>`;
+
+module.exports = landing(signinForm);
+
+},{"../landing":22,"yo-yo":8}],25:[function(require,module,exports){
+var page = require('page');
+var empty = require('empty-element');
+var template = require('./template');
+var title = require('title');
+
+page('/signup', function (ctx, next) {
+  title('vego-signup');
+  var main = document.getElementById('main-container');
+  empty(main).appendChild(template);
+});
+
+},{"./template":26,"empty-element":3,"page":4,"title":7}],26:[function(require,module,exports){
+
+var yo = require('yo-yo');
+var landing = require('../landing');
+
+var signupForm = yo`<div class="col s12 m7">
+                        <div class="row">
+                          <div class="signup-box">
+                            <h1 class="vego">Vego</h1>
+                            <form action="" class="signup-form">
+                              <div class="section">
+                                <h2>Registrate</h2>
+                                <a href="" class="btn btn-fb hide-on-small-only">iniciar con facebook</a>
+                                <a href="" class="btn btn-fb hide-on-med-and-up"><i class="fa fa-facebook-official" aria-hidden="true"></i>iniciar sesion</a>    
+                              </div>
+                              <div class="divider"></div>
+                              <div class="section">
+                                <input type="email" name="email" placeholder="correo electronico"/>
+                                <input type="text" name="email" placeholder="nombre completo"/>
+                                <input type="text" name="username" placeholder="nombre de usuario"/>
+                                <input type="password" name="password" placeholder="password"/>
+                                <button class="btn waves-effect waves-light btn-signup" type="submit">registrate</button>
+                              </div>
+                            </form>
+                          </div>  
+                        </div>
+                        <div class="row">
+                          <div class="login-box">
+                            tienes una cuenta ? <a href="/signin">Entrar</a>
+                          </div>
+                        </div>
+                      </div>`;
+
+module.exports = landing(signupForm);
+
+},{"../landing":22,"yo-yo":8}]},{},[19]);
