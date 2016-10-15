@@ -6395,9 +6395,6 @@ body {
   color: #e6005c;
   font-family: Montserrat; }
 
-#main-container {
-  margin: 30px auto; }
-
 .iphone {
   max-width: 100%; }
 
@@ -6441,6 +6438,9 @@ body {
   color: #e6005c;
   box-shadow: none;
   border-bottom: 1px solid #edeeee; }
+
+.timeline {
+  padding: 30px 0; }
 
 /* Get the bourbon mixin from http://bourbon.io */
 /* Reset */

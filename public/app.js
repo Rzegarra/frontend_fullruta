@@ -2534,34 +2534,25 @@ var title = require('title');
 page('/', function (ctx, next) {
   title('vego');
   var main = document.getElementById('main-container');
+  var clockdown = document.getElementById('clockdown');
+  empty(clockdown);
   empty(main).appendChild(template);
 });
 
 },{"./template":18,"empty-element":3,"page":4,"title":7}],18:[function(require,module,exports){
 var yo = require('yo-yo');
+var layout = require('../layout');
 
-var template = yo`<nav class="header">
-                    <div class="nav-wrapper">
-                      <div class="container">
-                        <div class="row">
-                          <div class="col s12 m6 offset-m1">
-                            <a href="/" class="brand-logo vego">Vego</a>
-                          </div>
-                          <div class="col s2 m6 push-m10">
-                            <a href="#" class="btn btn-large btn-flat dropdown-button" data-activates="drop-user">
-                              <i class="fa fa-user" aria-hidden="true"></i>
-                            </a>
-                            <ul id="drop-user" class="dropdown-content">
-                              <li><a href="#">Salir</a></li>
-                            </ul>
-                          </div>
-                        </div>
+var template = yo`<div class="container timeline">
+                    <div class="row">
+                      <div class="col s12 m10 offset-m1 l6 offset-l3">
+                        content
                       </div>
                     </div>
-                  </nav>`;
-module.exports = template;
+                  </div>`;
+module.exports = layout(template);
 
-},{"yo-yo":8}],19:[function(require,module,exports){
+},{"../layout":23,"yo-yo":8}],19:[function(require,module,exports){
 var page = require('page');
 
 require('./js/clock');
@@ -2573,7 +2564,7 @@ require('./signin');
 
 page();
 
-},{"./homepage":17,"./js/clock":20,"./js/flipclock":21,"./signin":23,"./signup":25,"page":4}],20:[function(require,module,exports){
+},{"./homepage":17,"./js/clock":20,"./js/flipclock":21,"./signin":24,"./signup":26,"page":4}],20:[function(require,module,exports){
 var clock;
 $(document).ready(function () {
   var currentDate = new Date();
@@ -4686,6 +4677,42 @@ module.exports = function landing(box) {
 };
 
 },{"yo-yo":8}],23:[function(require,module,exports){
+var yo = require('yo-yo');
+module.exports = function layout(content) {
+
+  return yo`<div>
+                <nav class="header">
+                  <div class="nav-wrapper">
+                    <div class="container">
+                      <div class="row">
+                        <div class="col s12 m6 offset-m1">
+                          <a href="/" class="brand-logo vego">Vego</a>
+                        </div>
+                        <div class="col s2 m6 push-m10">
+                          <a href="#" class="btn btn-large btn-flat dropdown-button" data-activates="drop-user">
+                            <i class="fa fa-user" aria-hidden="true"></i>
+                          </a>
+                          <ul id="drop-user" class="dropdown-content">
+                            <li><a href="#">Salir</a></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </nav>
+                <div class="row">
+                  <div class="clockstyle">
+                    <div class="clock">
+                    </div>
+                  </div>  
+                </div>
+                <div class="content">
+                  ${ content }
+                </div>
+              </div> `;
+};
+
+},{"yo-yo":8}],24:[function(require,module,exports){
 var page = require('page');
 var empty = require('empty-element');
 var template = require('./template');
@@ -4697,7 +4724,7 @@ page('/signin', function (ctx, next) {
   empty(main).appendChild(template);
 });
 
-},{"./template":24,"empty-element":3,"page":4,"title":7}],24:[function(require,module,exports){
+},{"./template":25,"empty-element":3,"page":4,"title":7}],25:[function(require,module,exports){
 
 var yo = require('yo-yo');
 var landing = require('../landing');
@@ -4729,7 +4756,7 @@ var signinForm = yo`<div class="col s12 m7">
 
 module.exports = landing(signinForm);
 
-},{"../landing":22,"yo-yo":8}],25:[function(require,module,exports){
+},{"../landing":22,"yo-yo":8}],26:[function(require,module,exports){
 var page = require('page');
 var empty = require('empty-element');
 var template = require('./template');
@@ -4741,7 +4768,7 @@ page('/signup', function (ctx, next) {
   empty(main).appendChild(template);
 });
 
-},{"./template":26,"empty-element":3,"page":4,"title":7}],26:[function(require,module,exports){
+},{"./template":27,"empty-element":3,"page":4,"title":7}],27:[function(require,module,exports){
 
 var yo = require('yo-yo');
 var landing = require('../landing');
