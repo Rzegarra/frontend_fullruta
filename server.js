@@ -38,17 +38,18 @@ app.get('/api/pictures', function (req, res, next) {
       likes: 10,
       liked: false,
       createAt: new Date()
-  },
-  {
-      user : {
-        username: 'zeg',
-        avatar:'https://pbs.twimg.com/profile_images/651452887177003008/ByrHXrqm.jpg'
-      },
-      url: 'iPhone6.png',
-      likes: 2,
-      liked: true,
-      createAt:new Date().setDate(new Date().getDate()-10)
   }
+  // ,
+  // {
+  //     user : {
+  //       username: 'zeg',
+  //       avatar:'https://pbs.twimg.com/profile_images/651452887177003008/ByrHXrqm.jpg'
+  //     },
+  //     url: 'iPhone6.png',
+  //     likes: 2,
+  //     liked: true,
+  //     createAt:new Date().setDate(new Date().getDate()-10)
+  // }
   ]
   setTimeout(function () {
     res.send(pictures)

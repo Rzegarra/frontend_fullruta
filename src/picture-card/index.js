@@ -5,9 +5,7 @@ module.exports =  function pictureCard(pic){
   var el
   function render (picture) {
     return yo`<div class="card ${picture.liked ? 'liked':''}">
-        <div class="card-image">
-          <img class="activator" src="${picture.url}">
-        </div>
+        
         <div class="card-content">
           <a href="/user/${picture.user.username}" class="card-title">
             <img src="${picture.user.avatar}" class="avatar"/>
