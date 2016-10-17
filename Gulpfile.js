@@ -61,13 +61,14 @@ gulp.task('js', function () {
 })
 
 gulp.task('build', function () {
-  var bundle = browserify('src/index.js')
+  var bundle = browserify('src/index.js', {debug: true})
   bundle
-      .transform(babel)
+      .transform(babel, { presets: [ 'es2015' ], plugins: [ 'syntax-async-functions', 'transform-regenerator' ] })
       .bundle()
+      .on('error', function (err) { console.log(err); this.emit('end') })
       .pipe(source('index.js'))
       .pipe(rename('app.js'))
-      .pipe(gulp.dest('public'))
+      .pipe(gulp.dest('public'));
 })
 
 

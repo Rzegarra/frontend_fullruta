@@ -7,13 +7,9 @@ body{
   color: #e6005c;
   font-family: Montserrat;
 }
-
-
-
 .iphone{
   max-width: 100%;
 }
-
 .site-footer{
   text-transform: uppercase;
   font-size: 12px;
@@ -65,3 +61,120 @@ body{
 .timeline {
   padding: 30px 0;
 }
+
+$avatar-size:48px;
+.avatar{
+  max-width:48px;
+  border-radius: 50%;
+  float: left;
+  margin-right: 12px;
+}
+
+.card small.time{
+  line-height: $avatar-size;
+}
+
+.card p {
+  padding: 20px 0;
+}
+
+.card .likes {
+  line-height: 30px;
+  margin-left: 12px;
+
+}
+
+.card i {
+  font-size: 30px;
+}
+
+.card .fa-heart-o {
+  color: $secondary-color;
+}
+.card .fa-heart {
+  color: $secondary-color;
+  display: none;
+}
+
+.card.liked {
+  .fa-heart{
+    display: block;
+  }
+  .fa-heart-o{
+    display: none;
+  }
+}
+// *******************************************************
+
+@mixin cycle($secs){
+	animation:spin $secs infinite;
+	-webkit-animation:spin $secs infinite;
+	animation-timing-function: linear;
+	-webkit-animation-timing-function: linear;
+}
+
+@keyframes spin{
+	from{-webkit-transform: rotate(0deg);}
+	to{-webkit-transform: rotate(360deg);}
+}
+
+@-webkit-keyframes spin{
+	from{-webkit-transform: rotate(0deg);}
+	to{-webkit-transform: rotate(360deg);}
+}
+
+body{
+    margin:0;
+    padding:0;
+
+}
+
+#loadIcon{
+	margin: 60px auto;
+	height:120px;
+	width:120px;
+	position:relative;
+
+	div{
+		position:absolute;
+	
+		&:first-child{
+			height:120px;
+			width:120px;
+			border-radius:60px;
+			border-top:solid 10px #237699;
+			@include cycle(2s);
+		}
+	
+
+		&:nth-child(2){
+			height:90px;
+			width:90px;
+			border-radius:45px;
+			border-top:solid 10px #e6005c;
+			top: 15px;
+			left:15px;
+			@include cycle(1.5s);
+		}
+
+		&:nth-child(3){
+			height:60px;
+			width:60px;
+			border-radius:30px;
+			border-top:solid 10px #e6005c;
+			top: 30px;
+			left:30px;
+			@include cycle(1s);
+		}
+		&:nth-child(4){
+			height:30px;
+			width:30px;
+			border-radius:15px;
+			border-top:solid 10px #e6005c;
+			top: 45px;
+			left:45px;
+			@include cycle(.5s);
+		}
+	}
+}
+// **************************************************
