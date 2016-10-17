@@ -4,6 +4,7 @@ var template = require('./template')
 var title = require('title')
 var request = require('superagent')
 var axios = require('axios')
+var yo = require('yo-yo')
 empty(clockdown)
 
 
@@ -51,15 +52,23 @@ empty(clockdown)
 
 
 
-page('/', loadPicturesAxios, function (ctx, next) {
+page('/', loading, loadPicturesAxios, function (ctx, next) {
   title('vego')
   var main = document.getElementById('main-container')
   var clockdown = document.getElementById('clockdown')
   empty(main).appendChild(template(ctx.pictures));
+
+  
+  console.log('borrando apinner')
+  var node = document.getElementById("loadIcon");
+  if (node.parentNode) {
+    node.parentNode.removeChild(node);
+  }
 })
 
 function loadPicturesAxios  (ctx, next) {
-  console.log('axios')
+  
+
   axios
     .get('/api/pictures')
     .then(function (res) {
@@ -70,7 +79,18 @@ function loadPicturesAxios  (ctx, next) {
       console.log(err)
     })}
 
-
+function loading (ctx, next) {
+  console.log('por la r,,,')
+  var el = yo`<div id="loadIcon">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>`
+  var main = document.getElementById('main-container')
+  empty(main).appendChild(el)
+  next()
+}
 // page('/', loadPictures, function (ctx, next) {
 //   title('vego')
 //   var main = document.getElementById('main-container')
