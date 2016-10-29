@@ -6390,6 +6390,9 @@ button.picker__today:focus, button.picker__clear:focus, button.picker__close:foc
   .picker--time .picker__box {
     margin-bottom: 5em; } }
 
+html {
+  font-family: GillSans, Calibri, Trebuchet, sans-serif; }
+
 body {
   background: #fafafa;
   color: #e6005c;
@@ -6432,6 +6435,9 @@ body {
 
 .signup-form .btn.btn-signup, .signup-form .btn-signup.btn-large {
   background-color: #b30047; }
+
+#map {
+  height: 400px; }
 
 .header {
   background-color: white;

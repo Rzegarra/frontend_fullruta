@@ -2,6 +2,9 @@ $secondary-color:#e6005c;
 
 @import "node_modules/materialize-css/sass/materialize.scss";
 
+html {
+    font-family: GillSans, Calibri, Trebuchet, sans-serif;
+  }
 body{
   background:#fafafa;
   color: #e6005c;
@@ -49,6 +52,10 @@ body{
 }
 .signup-form .btn.btn-signup{
   background-color: #b30047
+}
+
+#map {
+  height: 400px;
 }
 
 .header{

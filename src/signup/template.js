@@ -18,6 +18,7 @@ var signupForm = yo`<div class="col s12 m7">
                                 <input type="text" name="email" placeholder="nombre completo"/>
                                 <input type="text" name="username" placeholder="nombre de usuario"/>
                                 <input type="password" name="password" placeholder="password"/>
+                                <input type="password" name="reconfirmar password" placeholder="password"/>
                                 <button class="btn waves-effect waves-light btn-signup" type="submit">registrate</button>
                               </div>
                             </form>

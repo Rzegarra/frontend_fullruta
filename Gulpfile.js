@@ -78,4 +78,4 @@ gulp.task('watch', function () {
 })
 
 
-gulp.task('default', ['sass','build','assets','css','js'])
+gulp.task('default', ['sass','build','assets','css'])

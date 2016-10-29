@@ -5,9 +5,8 @@ var title = require('title')
 var request = require('superagent')
 var axios = require('axios')
 var yo = require('yo-yo')
+var renderMap= require('../maps')
 empty(clockdown)
-
-
 // page('/', asyncLoad, function (ctx, next) {
 //   title('vego')
 //   var main = document.getElementById('main-container')
@@ -47,28 +46,29 @@ empty(clockdown)
 //     return console.log(err);
 //   }
 // }
+var position= {lat: -16.409047, lng: -71.537451}
+var lat = -16.409047
+var long = -71.537451
 
-
-
-
+var main = document.getElementById('main-container')
+var mapContainer = document.getElementById('map-init')
 
 page('/', loading, loadPicturesAxios, function (ctx, next) {
   title('vego')
-  var main = document.getElementById('main-container')
-  var clockdown = document.getElementById('clockdown')
-  empty(main).appendChild(template(ctx.pictures));
-
-  
-  console.log('borrando apinner')
   var node = document.getElementById("loadIcon");
   if (node.parentNode) {
     node.parentNode.removeChild(node);
   }
+  var clockdown = document.getElementById('clockdown')
+  var divMap = yo`<div id="map"></div>`
+  empty(mapContainer).appendChild(divMap)
+  document.getElementById('map').appendChild(renderMap(lat, long))
+  empty(main).appendChild(template(ctx.pictures));
+
 })
 
 function loadPicturesAxios  (ctx, next) {
-  
-
+  console.log('la m,..')
   axios
     .get('/api/pictures')
     .then(function (res) {
@@ -87,8 +87,8 @@ function loading (ctx, next) {
                   <div></div>
                   <div></div>
                 </div>`
-  var main = document.getElementById('main-container')
-  empty(main).appendChild(el)
+  empty(mapContainer).appendChild(el)
+  // empty(main).appendChild(el)
   next()
 }
 // page('/', loadPictures, function (ctx, next) {

@@ -1,8 +1,25 @@
 var express = require("express")
+
+var cookieParser = require('cookie-parser')
+var bodyParser = require('body-parser')
+var expressSession = require('express-session')
+var passport = require('passport')
+
 var app = express()
 
-app.set('view engine', 'pug')
+// app.set(bodyParser.json())
+// app.use(bodyParser.urlencoded({ extended : false}));
+// app.use(cookieParser());
+// app.use(expressSession({
+//   secret: config.secret,
+//   resave: false,
+//   saveUnitialized: false
+// }))
+// app.use(passport.initialize())
+// app.use(passport.session())
 
+
+app.set('view engine', 'pug')
 app.use(express.static('public'))
 
 // function restrict (req, res, next) {
@@ -27,7 +44,6 @@ app.get('/signin', function (req,res) {
 })
 
 app.get('/api/pictures', function (req, res, next) {
-
   var pictures = [
     {
       user : {
